@@ -23,6 +23,7 @@ const WORDING = {
     hint: '點最接近的出口就好。這會決定其他人的疏散方向要避開哪一邊。',
     repeat: '他移動了就再點一次——可以回報多次。',
     moving: '威脅移動中',
+    movingSelf: '對方正在移動',
   },
   火警: {
     cta: '我看到煙或火在哪',
@@ -30,6 +31,7 @@ const WORDING = {
     hint: '點最接近的出口就好。這會決定其他人要避開哪一邊。',
     repeat: '蔓延了就再點一次——可以回報多次。',
     moving: '火煙擴散中',
+    movingSelf: '火勢正在蔓延',
   },
   推擠: {
     cta: '我看到哪裡最擠',
@@ -37,6 +39,7 @@ const WORDING = {
     hint: '點最接近的出口就好。這會讓其他人改走比較不擠的方向。',
     repeat: '狀況變了就再點一次——可以回報多次。',
     moving: '壅塞點在移動',
+    movingSelf: '人潮持續變多',
   },
   急救: {
     cta: '我知道傷者在哪',
@@ -44,6 +47,7 @@ const WORDING = {
     hint: '點最接近的出口就好。這會讓趕來協助的人少找幾分鐘。',
     repeat: '位置變了就再點一次。',
     moving: '位置有變動',
+    movingSelf: '狀況正在變化',
   },
 };
 
@@ -53,6 +57,7 @@ const FALLBACK = {
   hint: '點最接近的出口就好。這會讓其他人知道該避開哪一邊。',
   repeat: '狀況變了就再點一次——可以回報多次。',
   moving: '位置在移動',
+  movingSelf: '狀況正在變化',
 };
 
 export function wordingFor(typeLabel) {

@@ -225,6 +225,24 @@ check "高嚴重度事件會警示鄰近場域" \
 check "鄰近警示指出來源場域與距離" \
   test "$(curl -s "$BASE/api/situation" | json "all(a.get('fromVenue') and a.get('distanceM') is not None for a in d['nearbyAlerts'])")" = "True"
 
+# 【交接用的報告】現場的人攔下站務人員時只能用嘴巴講「那邊好像有煙」，
+# 而系統手上有完整的結構。那些資訊留在畫面上，交接的那一刻就消失了。
+RPT=$(curl -s "$BASE/api/events/$EVT/report")
+check "事件報告產得出來（Markdown）" \
+  test "$(echo "$RPT" | head -1 | grep -c '^# 事件報告')" = "1"
+check "報告含摘要表與獨立訊號數" \
+  test "$(echo "$RPT" | grep -c '獨立訊號')" -ge 1
+# **這一節最重要**：一份看起來很正式的 Markdown 若沒有講清楚它的性質，
+# 收到的人會誤以為它經過查證——那比沒有這份報告更糟。
+check "報告載明「這是群眾通報，不是官方查證結果」" \
+  test "$(echo "$RPT" | grep -c '不是官方查證結果')" = "1"
+check "報告載明獨立訊號不等於不同的人" \
+  test "$(echo "$RPT" | grep -c '不等於不同的人')" = "1"
+check "報告載明座標非現場實測" \
+  test "$(echo "$RPT" | grep -c '非現場實測')" = "1"
+check "報告可下載（帶檔名）" \
+  test "$(curl -s -D - -o /dev/null "$BASE/api/events/$EVT/report?download=1" | grep -ci 'content-disposition')" = "1"
+
 echo "== 12. 百貨／商場（有地下樓層的公眾零售場所） =="
 RT=$(curl -s "$BASE/api/venues/search?q=%E6%96%B0%E5%85%89%E4%B8%89%E8%B6%8A")
 check "搜尋得到百貨場域" \
@@ -376,6 +394,22 @@ check "兩位獨立目擊者的位置差 → 判定移動中" \
   test "$(echo "$SRES" | json "d['motion']['moving']")" = "True"
 check "移動判定給出方位（疏散建議據此避開）" \
   test "$(echo "$SRES" | json "bool(d['motion']['compass'])")" = "True"
+
+# 【通報者自述的移動 vs 系統推算的移動】
+# 系統判定要求兩個獨立目擊者才成立（防誤判：一個人邊走邊回報會被誤判）。
+# 但一個人**看著**對方跑走本來就是證據，不該因為湊不到第二個人就被丟掉。
+# 兩者分開保存、UI 用不同語氣呈現。
+curl -s -X POST "$BASE/api/reports" -H 'Content-Type: application/json' -d '{
+  "uuid":"e2e-mv-1","sessionId":"mv-A","type":"attack",
+  "locationClaim":{"source":"manual","stationId":"TPE-BL06","confidence":1.0,"timestamp":1},
+  "reportedMoving":true}' > /dev/null
+wait_batch
+MEVT=$(curl -s "$BASE/api/reports/context?station=TPE-BL06&type=attack" | json "d['events'][0]['id']")
+check "通報者自述的移動被保存" \
+  test "$(curl -s "$BASE/api/events/$MEVT" | json "d['event']['reportedMoving']")" = "True"
+# 單一通報者不足以構成系統判定——這是刻意的防誤判規則，不能被自述繞過
+check "單一通報者的自述不會變成系統判定" \
+  test "$(curl -s "$BASE/api/events/$MEVT" | json "(d['event'].get('motion') or {}).get('moving', False)")" = "False"
 # 立刻重算，不等批次：歹徒移動時 10 秒是很長的時間
 check "目擊回報立即反映在態勢卡（不等批次 tick）" \
   test "$(curl -s "$BASE/api/situation" | json "any(e.get('motion',{}).get('moving') for s in d['stations'] for e in s['events'])")" = "True"

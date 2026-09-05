@@ -82,6 +82,8 @@ export default function ReportPage() {
   const [onTrain, setOnTrain] = useState(false);
   // 使用者指認的下一站——通知該站月台的依據
   const [nextVenueId, setNextVenueId] = useState(null);
+  // 通報者目擊到移動——與系統推算的移動判定分開
+  const [reportedMoving, setReportedMoving] = useState(false);
   const [noteDictating, setNoteDictating] = useState(false);
   const noteDictationRef = useRef(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -371,6 +373,7 @@ export default function ReportPage() {
         photoRoi: roiCell,
         needsAssistance,
         onTrain,
+        reportedMoving,
         nextVenueId: onTrain ? nextVenueId : null,
         note: note.trim() || null,
         photo,
@@ -397,7 +400,8 @@ export default function ReportPage() {
 
   function resetDraft() {
     setSelectedType(null); setMatchEvent(null); setAttachChoice(null);
-    setNote(''); setShowDetails(false); setOnTrain(false); setNextVenueId(null); setNeedsAssistance(false);
+    setNote(''); setShowDetails(false); setOnTrain(false); setNextVenueId(null);
+    setNeedsAssistance(false); setReportedMoving(false);
     setPhoto(null); setPhotoRef(null); setRoiCell(null); setSuggestedCell(null);
     setReadTexts([]); setCandidates([]); setVenueSwitchedTo(null); setPlaceText('');
     setNearExitCode(null); setIncidentPoint(null);
@@ -784,12 +788,33 @@ export default function ReportPage() {
                   進而把**其他出口標成「不要走」**，可能把人推向錯的方向。
                   server 端已經改成沒有錨點就不產生「不要走」清單，
                   這裡把選擇權明確交還給使用者。 */}
-              <div className="anchor-row">
+              {/* 【通報者看到的移動】
+              系統的移動判定要求兩個獨立目擊者才成立（防誤判：一個人邊走邊
+              回報會被誤判成威脅在移動）。但你**看著**對方跑走本來就是證據，
+              不該因為湊不到第二個人就被丟掉。這一格獨立保存，
+              態勢卡也用不同語氣呈現。 */}
+          <button
+            className={`anchor-unsure${reportedMoving ? ' anchor-unsure-on' : ''}`}
+            style={{ marginTop: 10 }}
+            onClick={() => setReportedMoving(!reportedMoving)}
+          >
+            <span className="anchor-unsure-main">
+              {reportedMoving ? '已標記：狀況正在移動／擴大' : '狀況正在移動／擴大'}
+            </span>
+            <span className="anchor-unsure-sub">
+              例如對方往某個方向走、或火煙正在蔓延
+            </span>
+          </button>
+
+          <div className="anchor-row">
                 <button
-                  className={`chip${!nearExitCode && !incidentPoint ? ' chip-active' : ''}`}
+                  className={`anchor-unsure${!nearExitCode && !incidentPoint ? ' anchor-unsure-on' : ''}`}
                   onClick={() => { setNearExitCode(null); setIncidentPoint(null); }}
                 >
-                  不確定在站內哪裡
+                  <span className="anchor-unsure-main">不確定在站內哪裡</span>
+                  <span className="anchor-unsure-sub">
+                    不用勉強猜——猜錯會讓別人避開錯的出口
+                  </span>
                 </button>
                 {(nearExitCode || incidentPoint) && (
                   <span className="anchor-current">

@@ -33,6 +33,7 @@
 import { Router } from 'express';
 import { appendObservation, toEventSummary } from '../services/eventService.js';
 import { findVenue } from '../services/venueService.js';
+import { eventReportMarkdown, eventReportFilename } from '../services/eventReport.js';
 import { assessMotion } from '../services/threatMotion.js';
 
 export function createEventsRouter(store) {
@@ -52,6 +53,31 @@ export function createEventsRouter(store) {
     const event = store.getEvent(req.params.id);
     if (!event) return res.status(404).json({ ok: false, error: '事件不存在' });
     res.json({ ok: true, event: toEventSummary(event) });
+  });
+
+  /**
+   * 事件報告（Markdown）——可以直接遞給站務人員或警消的東西。
+   *
+   * 現場的人攔下站務人員時只能用嘴巴講「那邊好像有煙」，而系統手上其實有
+   * 完整的結構：幾個人回報、什麼時候、哪個錨點、有沒有在移動、照片。
+   * 那些資訊留在手機畫面上，交接的那一刻就消失了。
+   *
+   * `?download=1` 觸發下載；否則以 text/markdown 直接回傳（供分享／複製）。
+   */
+  router.get('/:id/report', (req, res) => {
+    const event = store.getEvent(req.params.id);
+    if (!event) return res.status(404).json({ ok: false, error: '事件不存在' });
+
+    // 照片連結要是絕對網址，別人收到才點得開
+    const origin = `${req.protocol}://${req.get('host')}`;
+    const md = eventReportMarkdown(event, { origin });
+
+    res.set('Content-Type', 'text/markdown; charset=utf-8');
+    if (req.query.download) {
+      const name = encodeURIComponent(eventReportFilename(event));
+      res.set('Content-Disposition', `attachment; filename*=UTF-8''${name}`);
+    }
+    res.send(md);
   });
 
   /**
