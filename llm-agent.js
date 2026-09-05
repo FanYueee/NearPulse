@@ -6,13 +6,14 @@ const { AI } = require("./ai-engine");
 const config = require("./config");
 
 function llmReady() {
+  if (process.env.LLM_OFF === "1") return false; // 測試/離線強制規則引擎
   return !!config.llm.apiKey;
 }
 
-// 呼叫 OpenAI 相容 /chat/completions
-async function chat(messages, { json = true } = {}) {
+// 呼叫 OpenAI 相容 /chat/completions (不依賴 response_format — 相容端點多半不支援)
+async function chat(messages, timeoutMs) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), config.llm.timeoutMs);
+  const timer = setTimeout(() => controller.abort(), Math.min(timeoutMs || config.llm.timeoutMs, 30000));
   try {
     const r = await fetch(`${config.llm.baseUrl}/chat/completions`, {
       method: "POST",
@@ -24,7 +25,6 @@ async function chat(messages, { json = true } = {}) {
       body: JSON.stringify({
         model: config.llm.model,
         messages,
-        ...(json ? { response_format: { type: "json_object" } } : {}),
         temperature: 0.2,
       }),
     });
@@ -34,6 +34,17 @@ async function chat(messages, { json = true } = {}) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+// 從模型輸出穩定抽取 JSON (剝 markdown 圍欄/前後綴文字)
+function extractJson(raw) {
+  const t = String(raw || "").trim();
+  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fenced ? fenced[1] : t;
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) throw new Error("no json in response");
+  return JSON.parse(candidate.slice(start, end + 1));
 }
 
 const INTERPRET_SYSTEM = `你是公共場所突發事件的指揮官 AI。用 JSON 回應。
@@ -49,6 +60,9 @@ const INTERPRET_SYSTEM = `你是公共場所突發事件的指揮官 AI。用 JS
 只用 JSON, 不加其他文字。`;
 
 // 解讀回報 -> {ok, engine, kind, kindLabel, sub, severity, severityLabel, facts, shouldUpdate, reading, advice}
+// 現場語境: 8 秒內沒回應就走規則引擎 (人群等不起), 不影響事件流程
+const INTERPRET_TIMEOUT_MS = 8000;
+
 async function interpret(text, kindHint, facts) {
   const user = `回報: ${text}\n已知事實: ${JSON.stringify(facts || {})}`;
 
@@ -59,8 +73,8 @@ async function interpret(text, kindHint, facts) {
     const raw = await chat([
       { role: "system", content: INTERPRET_SYSTEM },
       { role: "user", content: user },
-    ]);
-    const j = JSON.parse(raw);
+    ], INTERPRET_TIMEOUT_MS);
+    const j = extractJson(raw);
 
     // 驗證 + 正規化 (LLM 輸出不可全信)
     const kind = AI.KINDS[j.kind] ? j.kind : "other";

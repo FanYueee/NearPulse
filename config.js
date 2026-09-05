@@ -24,7 +24,7 @@ module.exports = {
     apiKey: env("LLM_API_KEY", ""),
     baseUrl: env("LLM_BASE_URL", "https://api.openai.com/v1"),
     model: env("LLM_MODEL", "gpt-4o-mini"),
-    timeoutMs: Number(env("LLM_TIMEOUT_MS", 15000)),
+    timeoutMs: Number(env("LLM_TIMEOUT_MS", 45000)),
   },
 
   // 地理
@@ -35,6 +35,9 @@ module.exports = {
 
   // AI 指揮官追問週期
   askIntervalMs: 45000,
+
+  // 智慧解散: 無新活動超過此時間, AI 自動落幕並生成報告 (後台沒人也能運作)
+  autoResolveMs: 5 * 60 * 1000,
 
   // 事件落幕後保留 30 分鐘供查閱報告
   eventRetentionMs: 30 * 60 * 1000,

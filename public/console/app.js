@@ -1,4 +1,4 @@
-// NearPulse 後台 — 事件監控 (observer WS) / 統計 / 導流 / 落幕 / 手機預覽
+// NearPulse 後台 — 指揮中心: 測試情境面板 + 事件監控 + OSM 地圖 + 手機預覽同步
 "use strict";
 
 const $ = (s) => document.querySelector(s);
@@ -12,9 +12,12 @@ const api = async (p, o) => {
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtTime = (ts) => new Date(ts).toLocaleTimeString("zh-TW", { hour12: false });
 
-let current = null;   // {code, ...event, timeline}
+const SYS_LABEL = { report: "系統", fact: "AI 指揮官", ask: "AI 指揮官", contra: "闢謠引擎", zone: "AI 指揮官", resolved: "系統", drill: "演習", assign: "AI 指揮官", vote: "共識", guide: "AI 引導" };
+
+let current = null;
 let ws = null;
 let zoneOpen = false;
+let reconnectAttempts = 0;
 
 // ---------------------------------------------------------------- 事件列表
 async function refreshList() {
@@ -22,14 +25,14 @@ async function refreshList() {
   try { list = await api("/api/events"); } catch { return; }
   refreshMap(list);
   const holder = $("#ev-list");
-  if (!list.length) { holder.innerHTML = '<div class="ev-empty">目前無進行中事件 — 可在手機預覽發起通報</div>'; return; }
+  if (!list.length) { holder.innerHTML = '<div class="ev-empty">目前無進行中事件 — 按「測試」注入情境，或用任何手機開 nearpulse 網址通報</div>'; return; }
   holder.innerHTML = "";
   for (const e of list) {
     const d = document.createElement("div");
     d.className = "ev-item" + (current && current.code === e.code ? " on" : "");
     const sev = e.severity || 2;
     d.innerHTML = `<div class="t">${esc(e.title)}<span class="ev-sev s${sev}">${sev >= 4 ? "危急" : sev === 3 ? "緊急" : sev === 2 ? "注意" : "輕微"}</span></div>
-      <div class="s">${e.mode === "gps" ? "GPS" : "掃碼"} · ${e.memberCount} 人 · 信心 ${e.consensus ? e.consensus.score : "-"} · ${e.consensus && e.consensus.label ? e.consensus.label.v : ""} · 代碼 ${e.code}${e.isDrill ? " · [演習]" : ""}</div>`;
+      <div class="s">${esc(e.semantic || (e.mode === "gps" ? "GPS" : "位置判斷中"))} · ${e.memberCount} 人 · 信心 ${e.consensus ? e.consensus.score : "-"} · ${e.consensus && e.consensus.label ? e.consensus.label.v : ""}</div>`;
     d.onclick = () => selectEvent(e.code);
     holder.appendChild(d);
   }
@@ -48,17 +51,71 @@ async function refreshStats() {
     <div class="stat"><div class="n">${s.db.total_events}</div><div class="l">歷史事件</div></div>
     <div class="stat"><div class="n">${s.db.resolved_events}</div><div class="l">已落幕</div></div>
     <div class="stat"><div class="n">${s.db.total_messages}</div><div class="l">總訊息</div></div>
-    <div class="stat"><div class="n">${s.db.total_confirms}/${s.db.total_denies}</div><div class="l">確認/未見票</div></div>`;
+    <div class="stat"><div class="n">${s.db.total_confirms}/${s.db.total_denies}</div><div class="l">確認/未見</div></div>`;
 }
 
+// ---------------------------------------------------------------- 測試情境面板 (一鍵開演, 手機預覽同步)
+const SCENARIOS = {
+  paris:   { label: "巴黎地鐵 B2", desc: "GPS 失效 · 法/中多語群眾 · 月台昏倒", btn: "#sc-paris" },
+  airport: { label: "機場登機門 B12", desc: "複雜樓層 · 旅客昏倒 · 地勤/旅客接力", btn: "#sc-airport" },
+  mall:    { label: "百貨 3F 走失", desc: "溫柔版 · 店員/顧客/媽媽", btn: "#sc-mall" },
+  drill:   { label: "演習模式", desc: "機器人注入雜訊 · 五目標 AI 評分", btn: "#sc-drill" },
+};
+
+$("#test-btn").onclick = () => {
+  $("#sc-panel").classList.toggle("hidden");
+  $("#test-btn").classList.toggle("on");
+};
+$("#sc-panel-close").onclick = () => { $("#sc-panel").classList.add("hidden"); $("#test-btn").classList.remove("on"); };
+
+async function runScenario(name) {
+  try {
+    let ev;
+    if (name === "drill") {
+      ev = await api("/api/events/drill/start", { method: "POST", body: JSON.stringify({ org: "學校", scenario: "fire" }) });
+    } else {
+      ev = await api("/api/admin/scenario", { method: "POST", body: JSON.stringify({ name }) });
+    }
+    toastOnConsole(`情境已建立 — 事件代碼 ${ev.code}`);
+    $("#sc-panel").classList.add("hidden");
+    $("#test-btn").classList.remove("on");
+    refreshList(); refreshStats();
+    selectEvent(ev.code);
+    // 三畫面同步: 預覽 iframe 導向同一事件 (與手機 ?join=CODE 相同畫面)
+    $("#preview-frame").src = `/mobile/?join=${ev.code}`;
+    $$(".frame-src button").forEach((x) => x.classList.remove("on"));
+  } catch (e) { toastOnConsole("情境注入失敗: " + e.message); }
+}
+for (const [name, sc] of Object.entries(SCENARIOS)) {
+  $(sc.btn).onclick = () => {
+    if (!window.confirm(`開始「${sc.label}」情境測試？\n\n${sc.desc}\n\n建立後: 後台自動監控、右側手機預覽同步進入該事件（與真手機掃 QR 同畫面）。`)) return;
+    runScenario(name);
+  };
+}
+
+$("#demo-reset").onclick = async () => {
+  if (!window.confirm("重置？所有事件與統計歸零，回到乾淨 Demo 起始狀態。")) return;
+  try {
+    const r = await api("/api/admin/reset", { method: "POST" });
+    toastOnConsole(`已重置 — 全部歸零`);
+    current = null;
+    if (ws) { try { ws.onclose = null; ws.close(); } catch {} ws = null; }
+    $("#mon-title").textContent = "已重置 — 按「測試」開始，或從手機通報";
+    $("#mon-body").classList.add("hidden");
+    $("#qr-holder").innerHTML = '<div class="ev-empty">選擇事件後顯示</div>';
+    $("#preview-frame").src = "/mobile/";
+    $$(".frame-src button").forEach((x) => x.classList.toggle("on", x.dataset.src === "/mobile/"));
+    refreshList(); refreshStats();
+  } catch (e) { toastOnConsole("重置失敗: " + e.message); }
+};
+
 // ---------------------------------------------------------------- 選擇事件 → observer WS
-let reconnectAttempts = 0;
 function selectEvent(code) {
   if (ws) { try { ws.onclose = null; ws.close(); } catch {} ws = null; }
   reconnectAttempts = 0;
   const proto = location.protocol === "https:" ? "wss" : "ws";
   ws = new WebSocket(`${proto}://${location.host}/ws?event=${encodeURIComponent(code)}&name=console&role=observer`);
-  const myWs = ws; // 閉包防切換劫持
+  const myWs = ws;
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data);
     if (m.type === "welcome") {
@@ -66,9 +123,10 @@ function selectEvent(code) {
       reconnectAttempts = 0;
       renderMon();
       loadQr(code);
+      // 預覽同步到該事件 (若預覽還在通報頁)
+      if (!$("#preview-frame").src.includes("join=")) $("#preview-frame").src = `/mobile/?join=${code}`;
     } else if (m.type === "error") {
-      // 事件不存在/已落幕 — 停止重連
-      if (myWs === ws) { $("#mon-title").textContent = `事件 ${code} 已落幕或不存在`; }
+      if (myWs === ws) $("#mon-title").textContent = `事件 ${code} 已落幕或不存在`;
     } else if (m.type === "timeline") {
       current.timeline.push(m.msg);
       appendMsg(m.msg);
@@ -76,13 +134,12 @@ function selectEvent(code) {
     }
   };
   ws.onclose = (e) => {
-    if (myWs !== ws) return; // 已切換到別的事件 — 忽略
-    if (e.code === 4000) { // 事件落幕 (server 主動斷)
-      $("#mon-title").textContent = current ? current.title + " — 已落幕" : "已落幕";
+    if (myWs !== ws) return;
+    if (e.code === 4000) {
+      $("#mon-title").textContent = (current ? current.title + " — 已落幕" : "已落幕") + "（AI 自動或人工）";
       refreshList();
       return;
     }
-    // 指數退避重連, 上限 5 次
     if (reconnectAttempts >= 5) { $("#mon-title").textContent = "連線失敗 — 請重新選擇事件"; return; }
     const delay = 3000 * Math.pow(2, reconnectAttempts++);
     setTimeout(() => { if (myWs === ws && current && current.status === "active") selectEvent(code); }, delay);
@@ -98,7 +155,8 @@ async function refreshMeta() {
     Object.assign(current, j);
     renderFactsRow();
     renderConsensus();
-    $("#mon-meta").textContent = `${current.memberCount} 人 · 觀察台 ${current.observerCount} · ${current.semantic ? current.semantic : (current.mode === "gps" ? "GPS" : "掃碼")}`;
+    renderGuides();
+    $("#mon-meta").textContent = `${current.memberCount} 人 · 觀察台 ${current.observerCount} · ${current.semantic || (current.mode === "gps" ? "GPS" : "語意定位")}`;
   } catch {}
 }
 
@@ -107,26 +165,32 @@ function renderMon() {
   refreshMeta();
   renderFactsRow();
   renderConsensus();
+  renderGuides();
   renderZoneSel();
   const tl = $("#mon-tl");
   tl.innerHTML = "";
   for (const m of current.timeline.slice(-100)) appendMsg(m, true);
   tl.scrollTop = tl.scrollHeight;
-  $("#a-resolve").textContent = current.isDrill ? "結束演習" : "落幕解散";
+  $("#a-resolve").textContent = current.isDrill ? "結束演習" : "手動落幕 (AI 也會自動)";
+}
+
+function renderGuides() {
+  const guides = (current.timeline || []).filter((m) => m.kind === "guide");
+  const holder = $("#guide-holder");
+  if (!guides.length) { holder.innerHTML = '<div class="ev-empty">建立事件後 AI 自動引導</div>'; return; }
+  holder.innerHTML = guides.slice(-1).map((g) => esc(g.text.replace(/^AI 引導: ?/, ""))).join("<br/>");
 }
 
 function appendMsg(m, silent) {
   const tl = $("#mon-tl");
   const d = document.createElement("div");
   d.className = "msg " + m.kind;
-  const who = m.who === "system"
-    ? ({ report: "系統", fact: "AI 指揮官", ask: "AI 指揮官", contra: "闢謠引擎", zone: "AI 指揮官", resolved: "系統", drill: "演習", assign: "AI 指揮官", vote: "共識" }[m.kind] || "系統")
-    : m.who;
+  const who = m.who === "system" ? (SYS_LABEL[m.kind] || "系統") : m.who;
   const img = m.meta?.image ? `<img class="photo-img" src="${m.meta.image}" alt="照片" />` : "";
   d.innerHTML = `<div class="mh">${esc(who)} · ${fmtTime(m.ts)}</div><div class="mb">${esc(m.text)}</div>${img}`;
   tl.appendChild(d);
   if (!silent) tl.scrollTop = tl.scrollHeight;
-  if (["fact", "ask", "zone", "vote", "report", "contra", "assign", "resolved"].includes(m.kind)) refreshMeta();
+  if (["fact", "ask", "zone", "vote", "report", "contra", "assign", "resolved", "guide"].includes(m.kind)) refreshMeta();
 }
 
 function renderFactsRow() {
@@ -169,27 +233,20 @@ function renderZoneSel() {
   }
 }
 
-// ---------------------------------------------------------------- 操作
+// ---------------------------------------------------------------- 手動控制 (次要 — AI 自動為主)
 $("#a-zone").onclick = () => { zoneOpen = !zoneOpen; $("#zone-select").classList.toggle("hidden", !zoneOpen); };
-
 $("#a-report").onclick = async () => {
   if (!current) return;
-  try {
-    const j = await api(`/api/events/${current.code}/report`);
-    showReport(j.report);
-  } catch (e) { toastOnConsole(e.message); }
+  try { showReport((await api(`/api/events/${current.code}/report`)).report); } catch (e) { toastOnConsole(e.message); }
 };
-
 $("#a-resolve").onclick = async () => {
   if (!current) return;
   try {
     if (current.isDrill) {
       const j = await api(`/api/events/${current.code}/drill/stop`, { method: "POST" });
-      showReport(j.report);
-      showScore(j.scores);
+      showReport(j.report); showScore(j.scores);
     } else {
-      const j = await api(`/api/events/${current.code}/resolve`, { method: "POST" });
-      showReport(j.report);
+      showReport((await api(`/api/events/${current.code}/resolve`, { method: "POST" })).report);
     }
     refreshList(); refreshStats();
   } catch (e) { toastOnConsole(e.message); }
@@ -206,20 +263,18 @@ function showReport(r) {
       <p style="font-size:12px;color:var(--sub);margin-top:4px">${esc(r.aiNote)}</p>
     </div>`;
 }
-
 function showScore(sc) {
-  const out = $("#report-out");
-  out.insertAdjacentHTML("beforeend", `
+  $("#report-out").insertAdjacentHTML("beforeend", `
     <div style="background:var(--accent-soft);border-radius:11px;padding:13px 15px;margin-top:8px">
       <b style="font-size:14px">演習評分 ${sc.totalPercent} / ${sc.grade}</b>
       <p style="font-size:12px;color:var(--sub);margin-top:3px">${esc(sc.comment)}</p>
     </div>`);
 }
 
-function toastOnConsole(t) {
+function toastOnConsole(txt) {
   const el = document.createElement("div");
   el.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;font-size:13px;font-weight:600;border-radius:999px;padding:9px 18px;z-index:99";
-  el.textContent = t;
+  el.textContent = txt;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2400);
 }
@@ -229,8 +284,40 @@ async function loadQr(code) {
   try {
     const j = await api(`/api/events/${code}/qr`);
     $("#qr-code-label").textContent = "代碼 " + j.code;
-    $("#qr-holder").innerHTML = `<img class="qr-mini" src="${j.qr}" alt="QR" /><div class="preview-note">現場張貼此碼，掃描即入</div>`;
+    $("#qr-holder").innerHTML = `<img class="qr-mini" src="${j.qr}" alt="QR" /><div class="preview-note">現場張貼此碼，掃描即進入狀況頁</div>`;
   } catch {}
+}
+
+// ---------------------------------------------------------------- OSM 地圖 (Leaflet + OpenStreetMap)
+let map = null;
+let mapMarkers = [];
+function initMap() {
+  if (typeof L === "undefined") return;
+  map = L.map("map", { zoomControl: true }).setView([25.033, 121.565], 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+}
+function refreshMap(list) {
+  if (!map) return;
+  for (const mk of mapMarkers) map.removeLayer(mk);
+  mapMarkers = [];
+  let first = true;
+  for (const e of list) {
+    if (e.mode !== "gps") continue;
+    try {
+      const mk = L.marker([e.lat, e.lng], {
+        icon: L.divIcon({ className: "", html: `<div class="np-marker"><span>${e.severity >= 4 ? "!" : e.severity >= 3 ? "3" : "2"}</span></div>`, iconSize: [18, 18], iconAnchor: [9, 18] }),
+      }).addTo(map).bindPopup(`<b>${esc(e.title)}</b><br/>代碼 ${e.code} · 信心 ${e.consensus ? e.consensus.score : "-"}${e.semantic ? "<br/>" + esc(e.semantic) : ""}`);
+      mapMarkers.push(mk);
+      if (first) { map.setView([e.lat, e.lng], 16); first = false; }
+    } catch {}
+  }
+  const note = $("#map-note");
+  if (note) note.textContent = mapMarkers.length
+    ? `${mapMarkers.length} 個 GPS 事件標記 · 語意座標事件（地下/室內）依設計不落圖`
+    : "GPS 事件自動標記（地下/室內事件走語意座標）";
 }
 
 // ---------------------------------------------------------------- 預覽切換
@@ -240,70 +327,6 @@ $$(".frame-src button").forEach((b) => {
     $("#preview-frame").src = b.dataset.src;
   };
 });
-
-// ---------------------------------------------------------------- OSM 即時地圖 (Leaflet + OpenStreetMap, 零 API key)
-let map = null;
-let mapMarkers = [];
-function initMap() {
-  if (typeof L === "undefined") return; // 離線時靜默
-  map = L.map("map", { zoomControl: true, attributionControl: true }).setView([25.033, 121.565], 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(map);
-}
-function refreshMap(list) {
-  if (!map) return;
-  for (const mk of mapMarkers) map.removeLayer(mk);
-  mapMarkers = [];
-  let first = true;
-  for (const e of list) {
-    // 僅 GPS 事件有座標; 語意座標事件不落在地圖 (概念即「地圖之外」)
-    if (e.mode !== "gps") continue;
-    try {
-      const detail = (e.facts && e.facts.location) ? "" : "";
-      const mk = L.marker([e.lat, e.lng], {
-        icon: L.divIcon({ className: "", html: `<div class="np-marker"><span>${e.severity >= 4 ? "!" : e.severity >= 3 ? "3" : "2"}</span></div>`, iconSize: [18, 18], iconAnchor: [9, 18] }),
-      }).addTo(map)
-        .bindPopup(`<b>${esc(e.title)}</b><br/>代碼 ${e.code} · 信心 ${e.consensus ? e.consensus.score : "-"}${e.semantic ? "<br/>" + esc(e.semantic) : ""}`);
-      mapMarkers.push(mk);
-      if (first) { map.setView([e.lat, e.lng], 16); first = false; }
-    } catch {}
-  }
-  $("#map-note").textContent = mapMarkers.length
-    ? `${mapMarkers.length} 個 GPS 事件已標記 (點標記看詳情)`
-    : "GPS 事件建立後自動標記 (語意座標事件顯示於列表)";
-}
-
-// ---------------------------------------------------------------- Demo 控制 (重置 + 三情境劇本)
-function confirmAction(msg) { return window.confirm(msg); }
-
-$("#demo-reset").onclick = async () => {
-  if (!confirmAction("確定重置？所有事件與統計將歸零，回到乾淨 Demo 起始狀態。")) return;
-  try {
-    const r = await api("/api/admin/reset", { method: "POST" });
-    toastOnConsole(`已重置 — 事件 ${r.db.total_events} / 訊息 ${r.db.total_messages} 全部歸零`);
-    current = null;
-    if (ws) { try { ws.onclose = null; ws.close(); } catch {} ws = null; }
-    $("#mon-title").textContent = "已重置 — 選擇事件或從手機發起新通報";
-    $("#mon-body").classList.add("hidden");
-    $("#qr-holder").innerHTML = '<div class="ev-empty">選擇左側事件後顯示</div>';
-    refreshList(); refreshStats(); refreshMap([]);
-  } catch (e) { toastOnConsole("重置失敗: " + e.message); }
-};
-
-const SC_LABEL = { paris: "巴黎地鐵 (異國 GPS 失效)", airport: "機場 (登機門 B12)", mall: "百貨 (3F 走失)" };
-for (const [btnId, name] of [["#sc-paris", "paris"], ["#sc-airport", "airport"], ["#sc-mall", "mall"]]) {
-  $(btnId).onclick = async () => {
-    if (!confirmAction(`注入情境「${SC_LABEL[name]}」？將自動建立事件並陸續出現模擬群眾回報。`)) return;
-    try {
-      const r = await api("/api/admin/scenario", { method: "POST", body: JSON.stringify({ name }) });
-      toastOnConsole(`情境已建立 — 事件代碼 ${r.code}，模擬群眾將陸續回報`);
-      refreshList(); refreshStats();
-      selectEvent(r.code); // 自動開始監控
-    } catch (e) { toastOnConsole("情境注入失敗: " + e.message); }
-  };
-}
 
 // ---------------------------------------------------------------- 啟動
 refreshList();
