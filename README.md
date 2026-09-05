@@ -98,8 +98,7 @@ AI 只出現在 `advisors/vision.js`：把照片裡的字讀出來。位置由 `
 | 前端 | Leaflet + OSM 官方圖磚 | 總覽地圖與事件地圖，動態載入不進主 bundle |
 | 前端 | Web Speech API | 語音播報與語音輸入，零 API 零金鑰 |
 | 前端 | Service Worker + IndexedDB | 離線殼、態勢卡快取、回報佇列 |
-| 後端 | Node 22 + Express 4 | 唯一的執行時相依套件 |
-| 後端 | 記憶體 store（介面化） | 重啟即清；換 Redis／Postgres 只需替換實作 |
+| 後端 | Node 22 + Express 4 | 事件狀態機、批次分群、態勢卡 |
 | 資料 | OpenStreetMap（Geofabrik PBF） | 836 個地下場域、1356 個出口，本機解析 |
 | 資料 | 交通部 TDX | 北捷官方出口設施、站間行車秒數、有方向站序 |
 | 資料 | 政府資料開放平臺 128416 | 逐站開門側、輪椅席車廂 |
