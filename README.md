@@ -179,7 +179,7 @@ bash server/test/e2e.sh
 
 | 項目 | 來源 | 授權 |
 |---|---|---|
-| `server/src/data/venues.json` | OpenStreetMap（Geofabrik 抽取檔，本機解析） | ODbL，© OpenStreetMap contributors |
+| `server/src/data/venues.json` | OpenStreetMap（Geofabrik 抽取檔，本機解析） | ODbL，© OpenStreetMap contributors（衍生資料需保留姓名標示） |
 | 底圖圖磚 | `tile.openstreetmap.org` | ODbL；依 OSM Tile Usage Policy，僅供開發與展示 |
 | 地點搜尋後備 | OpenStreetMap Nominatim | ODbL；遵守每秒 1 次與 User-Agent 規範 |
 | `server/src/data/tdx-trtc.json` | 交通部運輸資料流通服務平臺（TDX） | 依 TDX 開放資料條款 |
@@ -197,5 +197,3 @@ bash server/test/e2e.sh
 ## License
 
 MIT，見 [`LICENSE`](LICENSE)。
-
-`venues.json` 是 OpenStreetMap 的 ODbL 衍生資料庫，使用時需保留姓名標示。
