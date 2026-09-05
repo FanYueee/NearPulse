@@ -63,6 +63,12 @@ const pictOf = (typeLabel) => TYPE_PICT[typeLabel] ?? 'other';
  * 而不是全台灣（含關西）所有通報排成一列。但如果拿不到位置，
  * 就只能是全部——那時候「附近」是個答不出來的問題。
  */
+/**
+ * 「就在你附近」的半徑。台北捷運站距普遍大於 300m，
+ * 所以 500 公尺幾乎就是「你這一站」。
+ */
+const CLOSE_M = 500;
+
 const RANGES = [
   { id: 1000, label: '1 公里內' },
   { id: 5000, label: '5 公里內' },
@@ -456,6 +462,51 @@ export default function SituationPage() {
     sessionStorage.setItem('np_step_free', next ? '1' : '0');
   }
 
+  /**
+   * 附近出現新事件時發一則瀏覽器通知。
+   *
+   * 這**不是** Web Push（那需要 VAPID 與伺服器推送，是 Phase 2 的事）。
+   * 這裡只在頁面開著時有用——但那已經解決了一個實際問題：
+   * 使用者把分頁切到背景之後，不會知道腳下多了一起火警。
+   *
+   * ⚠️ 這個 effect 必須放在早期返回**之前**（hooks 規則），而它需要的
+   * closeGroups 是在返回之後才算出來的——所以在 effect 內部自己重算，
+   * 不把它放進相依陣列（否則會踩到 TDZ，整頁白畫面）。
+   *
+   * 刻意的限制：
+   *   - **只對 500 公尺內的事件發**，遠處的事件發通知只是騷擾
+   *   - 同一個事件只發一次（記在 ref，重新整理才重置）
+   *   - 權限**不主動索取**，等使用者按了才問——一進頁面就跳權限，
+   *     多數人會直接拒絕，而拒絕之後就再也問不到了
+   */
+  const notifiedRef = useRef(new Set());
+
+  useEffect(() => {
+    if (notifyOn !== 'granted' || !card || !fix || typeof Notification === 'undefined') return;
+    for (const g of card.stations) {
+      if (!Number.isFinite(g.lat) || roughDistM(fix, g) > CLOSE_M) continue;
+      for (const ev of g.events) {
+        if (notifiedRef.current.has(ev.id)) continue;
+        notifiedRef.current.add(ev.id);
+        try {
+          new Notification(`${g.stationName}　${ev.typeLabel}`, {
+            body: ev.status === 'candidate'
+              ? '附近有人回報，需要現場的人確認'
+              : (ev.plan?.go?.length
+                ? `往 ${ev.plan.go.map((x) => x.code).join('、')} 出口`
+                : '請注意現場狀況'),
+            tag: ev.id, // 同一事件不重複堆疊
+          });
+        } catch { /* 非安全脈絡等情境會丟例外——不該擋住畫面 */ }
+      }
+    }
+  }, [card, fix, notifyOn]);
+
+  async function enableNotify() {
+    if (typeof Notification === 'undefined') return;
+    try { setNotifyOn(await Notification.requestPermission()); } catch { /* 使用者拒絕 */ }
+  }
+
   if (!card) {
     return <div className="page"><p className="muted">載入中…</p></div>;
   }
@@ -518,7 +569,6 @@ export default function SituationPage() {
    * 台北捷運站距普遍大於 300m，所以這個半徑幾乎就是「你這一站」。
    * 這種事件不該要使用者捲到頁面下方才看到。
    */
-  const CLOSE_M = 500;
   const closeGroups = fix
     ? groups.filter((g) => Number.isFinite(g.lat) && roughDistM(fix, g) <= CLOSE_M)
     : [];
