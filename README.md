@@ -52,29 +52,34 @@
 
 ## 系統架構
 
-```
-回報端（恐慌情境，3 次點擊）
-  類型 → 位置線索（四選一）→ 送出
-         拍照辨識 · 附近場域 · 自己描述（可語音）· GPS
-    │
-    │ POST /api/reports（UUID 冪等；離線則進 IndexedDB 佇列）
-    ▼
-Node + Express
-  reportService   欄位驗證、正規化（至少一種位置線索，但不強制是場域）
-  batchWorker     10 秒批次：歸屬 → 事件狀態機 → advisor（fire-and-forget）
-  cluster         同場域同類型合併；無場域者依座標鄰近或描述文字，否則各自成案
-  eventService    candidate → active → frozen / cancelled
-  ├ threatMotion       軌跡 → 方向（純函式）
-  ├ evacuationService  出口建議
-  ├ trainService       下一站、到站時刻、開門側
-  └ situationCardService  態勢卡 + ETag
-  advisors/  vision（唯一呼叫模型的地方）· stt（stub）· llm（確定性模板）
-  data/      venues.json · tdx-trtc.json · trtc-open.json（執行時只讀檔）
-    │
-    │ GET /api/situation（ETag 304；前台可見才輪詢）
-    ▼
-讀取端（弱網優先，卡片 < 50KB）
-  總覽地圖 → 範圍篩選 → 事件標示牌（往這裡走／不要走）→ 展開細節地圖
+```mermaid
+flowchart TD
+    subgraph R["回報端　恐慌情境，3 次點擊"]
+        R1["選類型"] --> R2["位置線索四選一<br/>拍照辨識 · 附近場域 · 自己描述 · GPS"] --> R3["送出"]
+    end
+
+    R3 -->|"POST /api/reports<br/>UUID 冪等；離線進 IndexedDB 佇列"| S
+
+    subgraph S["Node + Express"]
+        direction TB
+        V["reportService<br/>驗證：至少一種位置線索"] --> B["batchWorker<br/>10 秒批次"]
+        B --> C["cluster<br/>同場域同類型合併<br/>無場域者依座標或描述"]
+        C --> E["eventService<br/>candidate → active → frozen / cancelled"]
+        E --> M["threatMotion<br/>軌跡 → 方向"]
+        E --> X["evacuationService<br/>出口建議"]
+        E --> T["trainService<br/>下一站 · 到站時刻 · 開門側"]
+        M & X & T --> K["situationCardService<br/>態勢卡 + ETag"]
+        B -.->|"fire-and-forget"| AI["advisors/vision<br/>只讀字，不產生座標"]
+        AI -.->|"讀到的字"| D
+        D[("圖資快照<br/>venues.json · tdx-trtc.json<br/>執行時只讀檔")] --> X
+        D --> T
+    end
+
+    K -->|"GET /api/situation<br/>ETag 304；前台可見才輪詢"| U
+
+    subgraph U["讀取端　弱網優先，卡片 &lt; 50KB"]
+        U1["總覽地圖<br/>哪邊有事"] --> U2["範圍篩選"] --> U3["往這裡走 / 不要走"]
+    end
 ```
 
 AI 只出現在 `advisors/vision.js`：把照片裡的字讀出來。位置由 `venueService`
@@ -138,30 +143,6 @@ node --env-file=/path/to/nearpulse.env src/index.js
 bash server/test/e2e.sh
 ```
 
-開發模式（HMR，兩個 port）：
-
-```bash
-cd server && npm start        # :3000
-cd client && npm run dev      # :5173，/api 已代理
-```
-
-### 重建圖資快照
-
-資料已經進版控，這一步只有要更新時才需要。
-
-```bash
-curl -O https://download.geofabrik.de/asia/taiwan-latest.osm.pbf
-curl -O https://download.geofabrik.de/asia/japan/kansai-latest.osm.pbf   # 選配
-
-node server/scripts/extract-osm.mjs taiwan-latest.osm.pbf /tmp/tw.json
-node server/scripts/extract-osm.mjs kansai-latest.osm.pbf /tmp/kix.json
-node server/scripts/build-venues.mjs /tmp/tw.json /tmp/kix.json
-
-node server/scripts/fetch-tdx.mjs                      # 北捷官方資料
-node server/scripts/fetch-trtc-open.mjs                # 開門側、輪椅席
-node server/scripts/build-venues.mjs --network-only    # 只重算路網，數秒
-```
-
 ---
 
 ## 作品展示
@@ -171,9 +152,7 @@ node server/scripts/build-venues.mjs --network-only    # 只重算路網，數�
 
 ---
 
-## 限制與未來工作
-
-### 已知限制
+## 已知限制
 
 **圖資覆蓋不完整。** 836 個場域中有出口圖資的只有 279 個，百貨只有 58 個且多數
 在關西。OSM 對台灣室內空間幾乎沒有 mapping。我們的因應方式不是等圖資變好，
@@ -193,22 +172,6 @@ node server/scripts/build-venues.mjs --network-only    # 只重算路網，數�
 **語音輸入依賴網路。** Chrome 的 `SpeechRecognition` 會把音訊送到 Google 伺服器，
 所以它是加速器而非必經路徑，不支援或失敗時會靜默回到打字。
 
-**語音附件尚未轉錄。** `advisors/stt.js` 仍是 stub。
-
-**信任模型薄弱。** `sessionId` 的鑄造成本是零，「N 個獨立 session」承載不了
-升級門檻的重量。這是目前最大的結構性弱點。
-
-### 未來工作
-
-1. Web Push（VAPID）。目前「徵詢中」依賴有人主動打開 App，
-   一個緊急告警產品沒有人會被告警。deep link 介面已備妥，缺的是訂閱與推送。
-2. 信任模型：時間離散度、非對稱證據（照片比按鈕難偽造）、
-   高嚴重度轉換交給站務端確認。
-3. STT 接真實模型（advisor 介面不變）。
-4. Redis Stream + Postgres 持久化（store 介面直接替換）。
-5. 自架 OSM 圖磚與 Nominatim，現在用的是官方服務，不適合正式流量。
-6. 擴充 TDX 出口資料到高雄、桃園、台中、環狀線，欄位結構與北捷相同，
-   可再增加 247 個出口。
 
 ---
 
@@ -228,14 +191,6 @@ node server/scripts/build-venues.mjs --network-only    # 只重算路網，數�
 未寫入任何進版控的檔案。使用者資料只存在 sessionStorage，關頁即滅；
 唯一寫入 localStorage 的是「下樓前的最後定位」，座標粗化到約 110 公尺網格、
 30 分鐘自動失效、不含識別碼。現場照片暫存 10 分鐘後失效。
-
----
-
-## 團隊成員
-
-| 姓名 | 分工 |
-|---|---|
-| FanYueee | 全端開發、資料工程、產品設計 |
 
 ---
 
