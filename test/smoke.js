@@ -115,11 +115,11 @@ function connect(code, name, role) {
   console.log("== 3. 聊天 + AI 事實抽取 (bug fix 驗證: facts 必須更新) ==");
   const u3 = await connect(ev1.code, "User3");
   u2.ws.send(JSON.stringify({ type: "chat", text: "我在 3 樓看到有兩人受傷了，煙越來越大" }));
-  // 輪詢等待吸收完成 (LLM 2-8s / 規則引擎即時)
+  // 輪詢等待吸收完成 (LLM 2-8s, 併發排隊可達 20s+; 規則引擎即時)
   const gotInjured = await waitFor(async () => {
     const s = await get(`/api/events/${ev1.code}`);
     return /受傷|傷患/.test(s.body.facts.injured || "");
-  });
+  }, 30000);
   const stateA = await get(`/api/events/${ev1.code}`);
   ok("AI 抽取 injured 並寫回 facts", gotInjured);
   ok("AI 抽取 location 更新", /3 ?樓|三樓/.test(stateA.body.facts.location || ""));
@@ -246,19 +246,19 @@ function connect(code, name, role) {
   await waitFor(async () => {
     const s = await get(`/api/events/${drill.code}`);
     return !!s.body.facts.location;
-  }, 15000);
+  }, 30000);
   du.ws.send(JSON.stringify({ type: "chat", text: "現場無人受傷，但有濃煙威脅" }));
   const factsDone = await waitFor(async () => {
     const s = await get(`/api/events/${drill.code}`);
     return !!s.body.facts.injured && !!s.body.facts.threat;
-  }, 20000);
+  }, 30000);
   du.ws.send(JSON.stringify({ type: "photo", note: "濃煙" }));
   await sleep(800);
   // 觸發並回應一次指派 (assign 步驟) — 輪詢等指派出現
   const gotAssign = await waitFor(async () => {
     const s = await get(`/api/events/${drill.code}`);
     return s.body.pending !== null || s.body.timeline.some((m) => m.kind === "assign");
-  }, 15000);
+  }, 30000);
   if (gotAssign) {
     const dst0 = await get(`/api/events/${drill.code}`);
     const target = dst0.body.pending ? dst0.body.pending.to : "DrillUser2";
@@ -267,7 +267,7 @@ function connect(code, name, role) {
     await waitFor(async () => {
       const s = await get(`/api/events/${drill.code}`);
       return s.body.pending === null && s.body.timeline.some((m) => /已回應指派/.test(m.text));
-    }, 10000);
+    }, 30000);
   }
   await patch(`/api/events/${drill.code}`, { zone: "C 區" });
   await sleep(500);
@@ -308,7 +308,7 @@ function connect(code, name, role) {
   const gotSim = await waitFor(async () => {
     const s = await get(`/api/events/${sc1.code}`);
     return s.body.timeline.some((m) => /Local|旅客/.test(m.who || ""));
-  }, 20000);
+  }, 30000);
   const scState = (await get(`/api/events/${sc1.code}`)).body;
   ok("模擬群眾訊息注入 (多語)", gotSim);
   const scSum = (await get(`/api/events/${sc1.code}/summary`)).body;

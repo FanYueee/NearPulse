@@ -41,6 +41,13 @@
     </button>
     <div class="mic-state" id="mic-state">按住開始說話</div>
 
+    <!-- SOS 工具: 聲光警報 + 快速撥號 (危急時不需思考) -->
+    <div class="sos-strip">
+      <button class="sos-btn" id="sos-siren" type="button">聲光警報</button>
+      <a class="sos-btn call" href="tel:110">報警 110</a>
+      <a class="sos-btn call" href="tel:119">救護 119</a>
+    </div>
+
     <div class="gps-line" id="gps-line">
       <span id="gps-txt">定位中…</span>
     </div>
@@ -82,6 +89,7 @@
     <div class="fact-strip" id="fact-strip"></div>
 
     <button class="solid wide" id="btn-safe" type="button">我已到安全處 / 事件結束了</button>
+    <button class="ghost wide" id="btn-imok" type="button">報平安 — 告訴家人我安全了</button>
 
     <!-- 補充現況: 跟首頁一樣的大麥克風 (按住說) -->
     <div class="more-zone">

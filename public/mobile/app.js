@@ -89,12 +89,71 @@ function applyLang() {
   $("#btn-nav") && ($("#btn-nav").textContent = t("nav"));
   // 切換鈕顯示「將切換到的語言」: 中文介面顯示 EN、英文介面顯示 中
   $("#lang-toggle").textContent = lang === "zh" ? "EN" : "中文";
+  $("#btn-imok") && ($("#btn-imok").textContent = lang === "zh" ? "報平安 — 告訴家人我安全了" : "I'm OK — tell my family");
+  if (!sirenOn) $("#sos-siren").textContent = lang === "zh" ? "聲光警報" : "Siren";
 }
 $("#lang-toggle").onclick = () => {
   lang = lang === "zh" ? "en" : "zh";
   localStorage.setItem("np_lang", lang);
   applyLang();
   requestGps();
+};
+
+// ---------------------------------------------------------------- SOS 工具 (聲光警報 + 快撥)
+// 雙頻交替警笛 (WebAudio) + 螢幕閃光 — 危急時引起周圍注意, 不需思考
+let sirenCtx = null, sirenOn = false, sirenTimer = null;
+$("#sos-siren").onclick = () => {
+  if (sirenOn) { stopSiren(); return; }
+  sirenOn = true;
+  $("#sos-siren").classList.add("active");
+  $("#sos-siren").textContent = "停止警報";
+  try {
+    sirenCtx = sirenCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const osc = sirenCtx.createOscillator();
+    const gain = sirenCtx.createGain();
+    osc.type = "sawtooth";
+    osc.connect(gain);
+    gain.connect(sirenCtx.destination);
+    gain.gain.value = 0.35;
+    osc.start();
+    let hi = false;
+    sirenTimer = setInterval(() => {
+      hi = !hi;
+      osc.frequency.setTargetAtTime(hi ? 950 : 620, sirenCtx.currentTime, 0.02);
+    }, 450);
+    window._sirenOsc = osc;
+  } catch { /* 靜音模式裝置仍可閃光 */ }
+  // 螢幕閃光
+  const flash = document.createElement("div");
+  flash.id = "siren-flash";
+  document.body.appendChild(flash);
+  // 震動
+  if (navigator.vibrate) { try { navigator.vibrate([300, 150, 300, 150, 300]); } catch {} }
+};
+
+function stopSiren() {
+  sirenOn = false;
+  $("#sos-siren").classList.remove("active");
+  $("#sos-siren").textContent = lang === "zh" ? "聲光警報" : "Siren";
+  if (sirenTimer) { clearInterval(sirenTimer); sirenTimer = null; }
+  try { if (window._sirenOsc) window._sirenOsc.stop(); } catch {}
+  const f = $("#siren-flash");
+  if (f) f.remove();
+}
+
+// 報平安: 分享「我安全了 + 位置」給家人 (Web Share → 降級 SMS)
+$("#btn-imok").onclick = async () => {
+  const msg = lang === "zh"
+    ? "我在這裡，我安全了。位置："
+    : "I'm safe here. Location: ";
+  const locPart = gps.lat
+    ? `https://maps.google.com/?q=${gps.lat},${gps.lng}`
+    : (ev && ev.facts && ev.facts.location ? ev.facts.location : (lang === "zh" ? "位置待確認" : "location TBD"));
+  const full = msg + locPart;
+  if (navigator.share) {
+    try { await navigator.share({ title: "NearPulse", text: full }); return; } catch {}
+  }
+  location.href = `sms:?&body=${encodeURIComponent(full)}`;
 };
 
 // ---------------------------------------------------------------- GPS (自動)
