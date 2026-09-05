@@ -88,8 +88,7 @@ AI 只出現在 `advisors/vision.js`：把照片裡的字讀出來。位置由 `
 
 | 類型 | 技術 | 用途 |
 |---|---|---|
-| AI 模型 | MiniMaxAI/MiniMax-M3（GMI Cloud） | 視覺辨識，兩段式（定位九宮格 → 讀取該格文字）。實測 locate 1.9s／read 1.8s |
-| AI 模型 | GPT-4o-mini Vision（可替換） | 同上。`VISION_PROVIDER` 可插拔，缺金鑰時自動降級 |
+| AI 模型 | MiniMaxAI/MiniMax-M3（GMI Cloud） | 視覺辨識，兩段式（定位九宮格 → 讀取該格文字）。實測 locate 1.9s／read 1.8s。供應商可插拔，缺金鑰時自動降級 |
 | 前端 | React 18 + Vite | PWA、hash 路由，無狀態管理套件 |
 | 前端 | Leaflet + OSM 官方圖磚 | 總覽地圖與事件地圖，動態載入不進主 bundle |
 | 前端 | Web Speech API | 語音播報與語音輸入，零 API 零金鑰 |
@@ -100,7 +99,6 @@ AI 只出現在 `advisors/vision.js`：把照片裡的字讀出來。位置由 `
 | 資料 | 交通部 TDX | 北捷官方出口設施、站間行車秒數、有方向站序 |
 | 資料 | 政府資料開放平臺 128416 | 逐站開門側、輪椅席車廂 |
 | 資料 | OSM Nominatim | 圖資外地點的搜尋後備（唯一的執行時連外，且只在搜尋路徑） |
-| Android | Kotlin + Compose | 氣壓計樓層偵測、加速度計人流停滯偵測（21 項單元測試） |
 
 ---
 
@@ -145,12 +143,6 @@ bash server/test/e2e.sh
 ```bash
 cd server && npm start        # :3000
 cd client && npm run dev      # :5173，/api 已代理
-```
-
-Android（選配）：
-
-```bash
-cd android && ./gradlew test assembleDebug
 ```
 
 ### 重建圖資快照

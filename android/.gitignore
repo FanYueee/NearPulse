@@ -1,8 +1,0 @@
-# Gradle / Android 建置產物
-build/
-.gradle/
-local.properties
-*.apk
-*.aab
-.cxx/
-captures/

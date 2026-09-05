@@ -113,7 +113,6 @@
 | 百貨／商場場域 | ✅ | 58 個（有 `building:levels:underground`）；僅場域層級，誠實標記無出口圖資 |
 | 場域 ID 全域唯一 | ✅ | 路網前綴（R14 在台北是圓山、高雄是巨蛋）；建表強制檢查 |
 | Service Worker 離線殼 | ✅ | 離線可開、回報排隊、態勢卡標示「上次取得」 |
-| Android app（感測器層） | ✅ | 氣壓計樓層偵測 + 人流停滯偵測；**21 項單元測試全過、APK 編得出來** |
 | Redis Stream / Postgres | ⬜ | 換 store 實作即可 |
 | Rate limiter（`/api/vision`） | ✅ | 每來源 12 次/分、全域 120 次/分。**超限回降級形狀而非 429**——通報不因限流而失敗 |
 | PWA manifest（可安裝） | ✅ | iOS 加主畫面即得推播資格 |
