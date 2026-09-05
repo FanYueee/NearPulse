@@ -1,0 +1,21 @@
+# 依賴
+node_modules/
+
+# 環境與金鑰
+.env
+
+# 執行時資料
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+nearpulse.log
+fallback.json
+
+# 個人對話匯出檔 (非專案程式碼)
+_Gemini*.html
+
+# 雜項
+.DS_Store
+*.log

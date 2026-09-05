@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NearPulse 後台 — 現場情報指揮中心</title>
+<link rel="icon" type="image/png" href="/icon-192.png" />
+<style>
+:root {
+  --bg: #f7f8fa; --panel: #ffffff; --line: #e4e9f0; --text: #101828; --sub: #667085;
+  --accent: #155eef; --accent-soft: #eaf1ff; --accent-deep: #0d3bb8;
+  --ok: #067647; --ok-bg: #ecfdf3; --warn: #b54708; --warn-bg: #fef6ee;
+  --bad: #b42318; --bad-bg: #fef3f2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  background: var(--bg); color: var(--text); min-height: 100vh;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+.hidden { display: none !important; }
+
+/* ---------- 頂欄 ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 18px; padding: 12px 22px;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 30;
+}
+.brand { font-size: 17px; font-weight: 800; }
+.brand span { color: var(--accent); }
+.brand small { font-size: 11px; color: var(--sub); font-weight: 600; margin-left: 8px; }
+.top-stats { display: flex; gap: 16px; margin-left: auto; font-size: 12px; color: var(--sub); }
+.top-stats b { color: var(--text); font-size: 14px; }
+.top-links a { color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none; margin-left: 12px; }
+
+/* ---------- 布局 ---------- */
+.layout { display: grid; grid-template-columns: 340px 1fr 360px; gap: 14px; padding: 14px 22px; align-items: start; }
+@media (max-width: 1200px) { .layout { grid-template-columns: 300px 1fr; } .preview-col { display: none; } }
+@media (max-width: 900px)  { .layout { grid-template-columns: 1fr; } }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+.card h3 { font-size: 13px; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.card h3 .live { color: var(--bad); font-size: 11px; }
+.card h3 .live::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--bad); margin-right: 5px; animation: pulse 1.4s infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+
+/* ---------- 事件列表 ---------- */
+.ev-item { border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 13px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+.ev-item:hover { border-color: var(--accent); }
+.ev-item.on { border-color: var(--accent); background: var(--accent-soft); }
+.ev-item .t { font-size: 13.5px; font-weight: 700; }
+.ev-item .s { font-size: 11.3px; color: var(--sub); margin-top: 2px; }
+.ev-sev { display: inline-block; font-size: 10.5px; font-weight: 800; border-radius: 5px; padding: 1px 7px; margin-left: 6px; vertical-align: 1px; }
+.ev-sev.s4 { background: var(--bad-bg); color: var(--bad); }
+.ev-sev.s3 { background: var(--warn-bg); color: var(--warn); }
+.ev-sev.s2 { background: var(--accent-soft); color: var(--accent-deep); }
+.ev-sev.s1 { background: var(--ok-bg); color: var(--ok); }
+.ev-empty { text-align: center; color: var(--sub); font-size: 12.5px; padding: 18px 0; }
+
+/* ---------- 即時監控 ---------- */
+.mon-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.mon-title { font-size: 16px; font-weight: 800; }
+.facts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+.fact-cell { background: var(--bg); border: 1.5px solid var(--line); border-radius: 11px; padding: 10px; }
+.fact-cell.ok { border-color: #a6e3c9; background: var(--ok-bg); }
+.fact-cell.miss { border-style: dashed; }
+.fact-cell .k { font-size: 10.5px; color: var(--sub); font-weight: 700; letter-spacing: 0.06em; }
+.fact-cell .v { font-size: 13.5px; font-weight: 700; word-break: break-all; }
+.fact-cell.miss .v { color: #98a2b3; font-weight: 500; }
+.fresh { font-size: 10.5px; margin-top: 3px; font-weight: 600; color: var(--ok); }
+.fresh.stale { color: var(--warn); }
+
+.consensus-bar { display: flex; align-items: center; gap: 12px; background: var(--bg); border-radius: 10px; padding: 10px 13px; margin-bottom: 10px; }
+.consensus-bar .num { font-size: 26px; font-weight: 800; color: var(--accent-deep); line-height: 1; }
+.meter { flex: 1; height: 7px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 5px; transition: width 0.5s; }
+.meter i.bad { background: var(--bad); } .meter i.warn { background: var(--warn); } .meter i.ok { background: var(--ok); }
+
+.tl { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; padding-right: 4px; }
+.msg { border-left: 2.5px solid var(--line); padding: 3px 0 3px 10px; }
+.msg .mh { font-size: 10.8px; color: var(--sub); font-weight: 700; }
+.msg .mb { font-size: 12.8px; }
+.msg.fact { border-color: var(--ok); } .msg.ask { border-color: var(--accent); }
+.msg.contra { border-color: var(--bad); background: var(--bad-bg); border-radius: 0 8px 8px 0; padding: 5px 8px 5px 10px; }
+.msg.assign { border-color: var(--warn); background: var(--warn-bg); border-radius: 0 8px 8px 0; padding: 5px 8px 5px 10px; }
+.msg.vote { border-color: var(--accent-deep); }
+.msg.resolved { border-color: var(--ok); background: var(--ok-bg); border-radius: 0 8px 8px 0; padding: 5px 8px 5px 10px; }
+.msg img.photo-img { max-width: 200px; border-radius: 8px; margin-top: 3px; }
+
+/* ---------- 操作 ---------- */
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.abtn { background: var(--accent-soft); color: var(--accent-deep); border: 1px solid #c7dbff; border-radius: 9px; padding: 8px 14px; font-size: 12.5px; font-weight: 700; }
+.abtn.danger { background: var(--bad-bg); color: var(--bad); border-color: #f4d7d5; }
+.abtn:active { opacity: 0.6; }
+.zone-row { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 8px; }
+.zone-row button { border: 1.5px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; color: var(--sub); background: var(--panel); }
+.zone-row button.on { border-color: var(--bad); color: var(--bad); background: var(--bad-bg); }
+
+/* ---------- 統計 ---------- */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { background: var(--bg); border-radius: 11px; padding: 11px 13px; }
+.stat .n { font-size: 22px; font-weight: 800; }
+.stat .l { font-size: 11px; color: var(--sub); font-weight: 600; }
+.mode-pill { font-size: 11px; color: var(--sub); }
+
+/* ---------- 預覽 ---------- */
+.phone-frame {
+  width: 100%; max-width: 300px; margin: 0 auto; aspect-ratio: 9/19;
+  border: 8px solid #1c2434; border-radius: 34px; overflow: hidden;
+  background: #fff; box-shadow: 0 12px 40px rgba(16,24,40,0.18);
+}
+.phone-frame iframe { width: 100%; height: 100%; border: none; }
+.preview-note { font-size: 11px; color: var(--sub); text-align: center; margin-top: 8px; }
+.frame-src { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
+.frame-src button { font-size: 11.5px; font-weight: 700; color: var(--sub); padding: 4px 10px; border-radius: 7px; background: var(--bg); }
+.frame-src button.on { color: #fff; background: var(--accent); }
+
+/* QR */
+.qr-mini { max-width: 150px; border-radius: 10px; }
+
+/* Demo 按鈕 */
+.top-links { display: flex; align-items: center; gap: 4px; }
+.demo-btn { background: var(--accent-soft); color: var(--accent-deep); border: 1px solid #c7dbff; border-radius: 9px; padding: 7px 13px; font-size: 12.5px; font-weight: 700; }
+.demo-btn:active { opacity: 0.6; }
+.demo-btn.warn { background: var(--bad-bg); color: var(--bad); border-color: #f4d7d5; }
+
+/* Leaflet 標記 */
+.np-marker { background: var(--bad); border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); width: 18px; height: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+.np-marker span { transform: rotate(45deg); display: block; text-align: center; font-size: 10px; font-weight: 800; color: #fff; line-height: 15px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Near<span>Pulse</span> <small>後台 · 現場情報指揮中心</small></div>
+  <div class="top-stats">
+    <span>進行中 <b id="st-active">0</b></span>
+    <span>總事件 <b id="st-total">0</b></span>
+    <span>訊息 <b id="st-msgs">0</b></span>
+    <span>確認票 <b id="st-confirms">0</b></span>
+  </div>
+  <div class="top-links">
+    <button class="demo-btn" id="demo-reset" type="button" title="清空所有事件，回到乾淨起始狀態">重置 Demo</button>
+    <button class="demo-btn" id="sc-paris" type="button" title="異國地鐵: GPS 失效、多語群眾、旅客昏倒">巴黎地鐵</button>
+    <button class="demo-btn" id="sc-airport" type="button" title="登機門 B12 昏倒">機場</button>
+    <button class="demo-btn" id="sc-mall" type="button" title="百貨 3F 走失">百貨走失</button>
+    <a href="/intro" target="_blank">介紹</a>
+    <a href="/mobile/" target="_blank">手機版</a>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- 左: 事件列表 -->
+  <div class="col">
+    <div class="card">
+      <h3>進行中事件 <span class="live" id="ev-live">LIVE</span></h3>
+      <div id="ev-list"><div class="ev-empty">載入中…</div></div>
+    </div>
+    <div class="card">
+      <h3>系統統計 <span class="mode-pill" id="db-mode"></span></h3>
+      <div class="stat-grid" id="stat-grid"></div>
+    </div>
+    <div class="card">
+      <h3>OSM 即時地圖 <span class="mode-pill">OpenStreetMap · GPS 事件</span></h3>
+      <div id="map-holder"><div id="map" style="height:220px;border-radius:11px;overflow:hidden;border:1px solid var(--line)"></div><div class="preview-note" id="map-note">GPS 事件建立後自動標記 (語意座標事件顯示於列表)</div></div>
+    </div>
+    <div class="card">
+      <h3>進入用 QR <span class="mode-pill" id="qr-code-label"></span></h3>
+      <div id="qr-holder" style="text-align:center"><div class="ev-empty">選擇左側事件後顯示</div></div>
+    </div>
+  </div>
+
+  <!-- 中: 即時監控 -->
+  <div class="col mon-col">
+    <div class="card">
+      <div class="mon-head">
+        <div class="mon-title" id="mon-title">選擇一個事件開始監控</div>
+        <span style="font-size:11.5px;color:var(--sub)" id="mon-meta"></span>
+      </div>
+      <div id="mon-body" class="hidden">
+        <div class="facts-row" id="facts-row"></div>
+        <div class="consensus-bar" id="consensus-bar"></div>
+        <div class="tl" id="mon-tl"></div>
+
+        <div class="actions">
+          <button class="abtn" id="a-zone">分區導流</button>
+          <button class="abtn" id="a-report">生成報告</button>
+          <button class="abtn danger" id="a-resolve">落幕解散</button>
+        </div>
+        <div class="zone-row hidden" id="zone-select"></div>
+        <div id="report-out" class="hidden" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右: 手機預覽 -->
+  <div class="col preview-col">
+    <div class="card">
+      <h3>手機即時預覽</h3>
+      <div class="phone-frame"><iframe id="preview-frame" src="/mobile/" title="手機預覽"></iframe></div>
+      <div class="frame-src">
+        <button data-src="/mobile/" class="on">通報頁</button>
+        <button data-src="/intro">介紹頁</button>
+      </div>
+      <div class="preview-note">模擬現場民眾視角 — 同一後端即時資料</div>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/console/app.js"></script>
+</body>
+</html>

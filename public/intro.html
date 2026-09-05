@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NearPulse — 功能介紹與創新亮點</title>
+<link rel="icon" type="image/png" href="/icon-192.png" />
+<style>
+:root {
+  --bg: #ffffff; --surface: #f5f7fa; --line: #e4e9f0; --text: #101828; --sub: #667085;
+  --accent: #155eef; --accent-soft: #eaf1ff; --accent-deep: #0d3bb8;
+  --ok: #067647; --ok-bg: #ecfdf3; --warn: #b54708; --warn-bg: #fef6ee; --bad: #b42318; --bad-bg: #fef3f2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.7;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+a { color: var(--accent); }
+.top { text-align: center; margin-bottom: 44px; }
+.top h1 { font-size: 34px; font-weight: 800; }
+.top h1 span { color: var(--accent); }
+.top .tag { color: var(--sub); font-size: 15px; margin-top: 6px; }
+.top .links { margin-top: 16px; }
+.top .links a {
+  display: inline-block; text-decoration: none; font-weight: 700; font-size: 14px;
+  background: var(--accent); color: #fff; border-radius: 11px; padding: 11px 22px; margin: 0 6px;
+}
+.top .links a.ghost { background: var(--surface); color: var(--accent-deep); border: 1px solid var(--line); }
+
+h2.sec { font-size: 21px; font-weight: 800; margin: 48px 0 6px; }
+h2.sec small { display: block; font-size: 13px; color: var(--sub); font-weight: 600; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+@media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+.f {
+  background: #fff; border: 1.5px solid var(--line); border-radius: 16px; padding: 18px 20px;
+}
+.f h3 { font-size: 15.5px; font-weight: 800; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.f p { font-size: 13.3px; color: var(--sub); margin-top: 6px; }
+.f .gain { font-size: 12.5px; color: var(--ok); font-weight: 700; margin-top: 6px; }
+.tagx { font-size: 10.5px; font-weight: 800; border-radius: 5px; padding: 2px 8px; letter-spacing: 0.04em; }
+.tagx.new { background: var(--accent-soft); color: var(--accent-deep); }
+.tagx.excl { background: var(--bad-bg); color: var(--bad); }
+.tagx.core { background: var(--ok-bg); color: var(--ok); }
+
+table.cmp { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+table.cmp th, table.cmp td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+table.cmp th { font-size: 12px; color: var(--sub); }
+table.cmp td:first-child { font-weight: 700; white-space: nowrap; }
+table.cmp .np { color: var(--accent-deep); font-weight: 700; }
+
+ol.drill { margin: 14px 0 0 20px; }
+ol.drill li { font-size: 13.8px; padding: 6px 0; }
+ol.drill b { color: var(--accent-deep); }
+
+.arch {
+  background: #101828; color: #d7f0d0; border-radius: 16px; padding: 22px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.3px; line-height: 1.8; overflow-x: auto; margin-top: 16px; white-space: pre;
+}
+.arch b { color: #7ef0c0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <h1>Near<span>Pulse</span> 近場脈動</h1>
+    <div class="tag">語意座標取代經緯度的臨時情報迴路 — 3 秒零打字回報 · 1-Tap 群眾驗證 · AI 微任務指派 · 事實保鮮期</div>
+    <div class="links">
+      <a href="/mobile/">開始通報 (手機)</a>
+      <a class="ghost" href="/console/">進入後台 (電腦)</a>
+    </div>
+  </div>
+
+  <h2 class="sec">核心創新 <small>與既有方案結構性不同的四個機制</small></h2>
+  <div class="grid">
+    <div class="f">
+      <h3>語意座標定位 <span class="tagx excl">獨家</span></h3>
+      <p><b>想像你身在巴黎地鐵 B2 的角落</b>：GPS 全死、指標全是法文、你連站名都說不出。NearPulse 不猜位置——你把眼睛看到的大字告訴系統：月台門號九宮格點一下；看不懂選項？直接輸入「SORTIE 3」這幾個字，人眼就是 OCR。機場看登機門（B12）、百貨看專櫃招牌（ZARA 3F）——這些是各國法規強制存在、眼睛一定找得到的錨點。每一步都可以跳過，全部跳過照樣能通報。</p>
+      <div class="gain">效益 — 零權限、零硬體、跨語言，在 GPS 死亡地帶完成連地圖都做不到的定位</div>
+    </div>
+    <div class="f">
+      <h3>地標式引導 <span class="tagx new">創新</span></h3>
+      <p>沒有經緯度，方向引導靠什麼？靠<b>眼睛找得到的東西</b>：「找綠色緊急出口燈箱（黑暗中發光），沿箭頭疏散」「你在地下層——優先找往上的動線」。引導引擎依空間類型（月台/走道/登機門/百貨）與樓層生成，摘錄進 Catch-up 卡，異國旅客不必讀懂地圖也能行動。</p>
+      <div class="gain">效益 — 從「你在哪」到「你該往哪走」的閉環，不依賴任何定位技術</div>
+    </div>
+    <div class="f">
+      <h3>1-Tap 群眾驗證 <span class="tagx excl">獨家</span></h3>
+      <p>第一人回報後，周遭群眾不需要進群打字，一顆按鈕完成「我看到了 / 沒看到」投票。信心分數公式完全透明：基礎 20 分，每確認 +12（上限 60），每未見 -15，隨時間衰減。惡作劇會被 15 個「沒看到」壓制。</p>
+      <div class="gain">效益 — 把 Waze 的行車回報置信度衰減，移植到步行逃生</div>
+    </div>
+    <div class="f">
+      <h3>AI 微任務指派 <span class="tagx new">創新</span></h3>
+      <p>旁觀者效應：現場人越多，越沒人回報。AI 指揮官不對空氣喊話，隨機<b>指名一位在場成員</b>「@你：請回報傷患狀況」，30 秒未回應才升級全員。回應即記錄，寫進落幕報告與演習評分。</p>
+      <div class="gain">效益 — 把「有人會處理吧」變成「就是我來處理」</div>
+    </div>
+  </div>
+
+  <h2 class="sec">完整功能 <small>從第一目擊到落幕歸檔的閉環</small></h2>
+  <div class="grid">
+    <div class="f"><h3>事件臨時群組 <span class="tagx core">核心</span></h3><p>掃 QR 或輸入 4 位代碼免安裝加入（PWA），事件落幕自動解散、30 分鐘後清除，不留永久雜訊。</p><div class="gain">效益 — 對比 Citizen 的永久恐懼推播，用完即散</div></div>
+    <div class="f"><h3>零打字狀態機回報 <span class="tagx core">核心</span></h3><p>7 大類 × 細項 + 4 級嚴重度全點選，恐慌下 3 秒完成；也支援語音輸入（AI 即時轉文字並代填表單）。</p><div class="gain">效益 — 符合戰逃反應下的操作極限</div></div>
+    <div class="f"><h3>AI 指揮官 + 追問</h3><p>主動追問缺失的位置／傷患／威脅，事實面板附完整度進度條，45 秒週期追蹤。</p><div class="gain">效益 — 混亂現場自動收斂結構化情報</div></div>
+    <div class="f"><h3>Catch-up 摘要卡</h3><p>晚加入者 10 秒看懂全貌：事件、位置、傷患、威脅、導流指引，不必爬數百則訊息。</p><div class="gain">效益 — 每個新進者都是即戰力</div></div>
+    <div class="f"><h3>闢謠引擎</h3><p>新回報與已知事實矛盾時自動標記「未經證實」並附原文；結合 1-Tap 投票形成雙層防線。</p><div class="gain">效益 — 假訊息跑得比查核快，就被演算法追上</div></div>
+    <div class="f"><h3>照片邊緣運算 <span class="tagx new">創新</span></h3><p>前端 Canvas 壓縮（800px WebP &lt;30KB）＋ Laplacian 變異數模糊篩檢，廢片（黑屏/手指/全糊）在端點攔截，不佔基地台頻寬。</p><div class="gain">效益 — 基地台塞車時每筆上傳都是高價值訊號</div></div>
+    <div class="f"><h3>分區導流</h3><p>點選風險分區即全員廣播「避開 B 區」，疏散不靠喊的。</p><div class="gain">效益 — 人潮有序撤離</div></div>
+    <div class="f"><h3>多語語音播報</h3><p>一鍵中→英→日輪播事件簡報，聽覺無障礙。</p><div class="gain">效益 — 外籍人士與視障者即時掌握</div></div>
+    <div class="f"><h3>落幕報告書</h3><p>時間軸、參與統計、矛盾數、信心分級事實，自動生成、SQLite 歸檔可查。</p><div class="gain">效益 — 事件留下可檢討的紀錄，救災交接不斷層</div></div>
+    <div class="f"><h3>演習模式 + AI 評分</h3><p>學校/企業日常演練：機器人注入模擬民眾雜訊與矛盾訊息，AI 對五項目標評分（指派回應/事實補齊/多模態/導流/落幕）。</p><div class="gain">效益 — 把冷啟動問題變成日常演練習慣</div></div>
+    <div class="f"><h3>電腦後台指揮中心</h3><p>桌面瀏覽器自動進入：事件總覽、即時監控（observer 旁聽不干擾現場）、信心分數儀表、分區導流、落幕、統計、手機即時預覽。</p><div class="gain">效益 — 站務/校方一屏掌控大局</div></div>
+    <div class="f"><h3>雙模式通報</h3><p>GPS 可用時自動定位＋地址反查；進入地下即切語意座標。兩種模式進入同一資訊迴路。</p><div class="gain">效益 — 定位是加速器，不是門檻</div></div>
+  </div>
+
+  <h2 class="sec">與既有方案的差異 <small>結構性做不到，不是功能差距</small></h2>
+  <table class="cmp">
+    <tr><th></th><th>Ushahidi / 官方災防 App / LINE 群</th><th class="np">NearPulse</th></tr>
+    <tr><td>空間粒度</td><td>經緯度 / 行政區 / 靠口頭描述</td><td class="np">月台門 · 消防栓 · 停車柱號 — 微觀語意座標</td></tr>
+    <tr><td>通訊假設</td><td>4G 順暢 + GPS 正常</td><td class="np">半癱瘓基地台也能動 — 30KB 照片 + 微型 payload</td></tr>
+    <tr><td>輸入成本</td><td>表單填地址 / 打字聊天</td><td class="np">零打字 3 秒 + 語音 + 1-Tap 按鈕</td></tr>
+    <tr><td>情報收斂</td><td>人工審核（小時級）/ 刷屏雜訊</td><td class="np">LLM 秒級抽取 + 群眾共識分數</td></tr>
+    <tr><td>誰來回報</td><td>等熱心的人 / 等專員</td><td class="np">AI 指名微任務 — 旁觀者效應破解</td></tr>
+    <tr><td>資訊時效</td><td>快照，過期無人知</td><td class="np">事實保鮮期 — 逾時主動要求覆核</td></tr>
+  </table>
+
+  <h2 class="sec">系統架構</h2>
+  <div class="arch">[手機 PWA — 通報端]                    [電腦 — 後台指揮中心]
+  3 秒零打字回報 / 語音 / 照片(邊緣壓縮+篩檢)      事件監控 / 信心儀表 / 導流 / 落幕 / 預覽
+        │  QR ?join=CODE / GPS / 語意座標兩階快選            │ observer WS (旁聽不干擾)
+        ▼                                                    ▼
+  ──────────── nginx :80 ── REST /api/* ── WebSocket /ws (升級) ────────────
+        │
+        ├─ lib/api.js    路由表化 REST (通報/驗證/統計/演習/報告)
+        ├─ lib/ws-hub    頻道 + agentAbsorb 統一吸收 + 微任務指派 + 事實保鮮
+        ├─ lib/store     記憶體權威 store (代碼防碰撞)
+        ├─ lib/consensus 1-Tap 共識分數 (透明公式)
+        ├─ lib/semloc    語意座標字典 (月台門/消防地標/停車柱/店名)
+        ├─ lib/db        <b>SQLite 持久化</b> (events/messages/votes; JSON 降級)
+        ├─ ai-engine     規則引擎 (事實抽取/分類/嚴重度/摘要/報告)
+        ├─ llm-agent     OpenAI 相容 LLM 判讀 (無金鑰自動降級規則引擎)
+        └─ drill-bot     演習機器人 + AI 評分</div>
+
+  <h2 class="sec">異國模擬情境 <small>後台一鍵注入，手機＋電腦同屏共演</small></h2>
+  <ol class="drill">
+    <li><b>巴黎地鐵</b>：GPS 失效 + 多語群眾——「Je ne comprends pas…」與中文回報混雜，AI 照樣收斂出「月台門 3 有傷患」，引導卡指示「找往上動線」</li>
+    <li><b>機場登機門 B12</b>：複雜樓層 + 醫療情境——旅客昏倒、地勤回報 AED 位置、家屬更新意識狀態</li>
+    <li><b>百貨 3F 走失</b>：低嚴重度日常情境——店員安撫、顧客引導服務台、媽媽趕到，完整走完溫柔版本的生命週期</li>
+    <li>後台「<b>重置 Demo</b>」按鈕：事件與統計全部歸零，任何時刻回到乾淨起始狀態，開箱即演</li>
+  </ol>
+
+  <h2 class="sec">3 分鐘演示腳本 <small>評審 Demo 可直接照做</small></h2>
+  <ol class="drill">
+    <li><b>電腦開後台</b>（桌面瀏覽器開首頁自動進入 /console）— 左欄事件列表、右欄手機預覽同屏</li>
+    <li><b>手機 A 通報</b>：開 /mobile/ → 選「傷病」→「月台」→ 點「3」（月台門）→ B2 →「緊急」→ 建立；注意通報過程<b>完全沒打字</b></li>
+    <li>後台即時看到事件出現，AI 指揮官自動追問缺失事實，事實面板從 33% 開始爬升</li>
+    <li><b>手機 B 加入</b>：輸入 4 位代碼（或掃後台顯示的 QR）→ 收到 10 秒 Catch-up 摘要卡</li>
+    <li><b>1-Tap 驗證</b>：手機 B 對事件按「我看到了」→ 後台信心分數即時 +12；再按「沒看到」模擬反向信號 → 分數下降</li>
+    <li><b>AI 微任務</b>：AI 指名 @某人 回報 → 被指者的任何訊息即為回應，後台看到指派卡與回應紀錄</li>
+    <li><b>闢謠</b>：回報 popover → 示範照片「已無煙」→ 闢謠引擎標記矛盾「未經證實」</li>
+    <li><b>真實照片</b>：拍照回報 — 前端顯示「已送出 xxKB（邊緣篩檢通過）」，模糊/過暗照片會被當場攔截</li>
+    <li><b>導流</b>：後台點分區 → 手機全員收到「避開 B 區」廣播</li>
+    <li><b>落幕</b>：後台一鍵落幕 → 報告書生成（統計/時間軸/矛盾數）→ 群組自動解散</li>
+    <li><b>演習</b>：手機首頁啟動「學校火警」→ 機器人注入雜訊 → 完成五目標 → AI 評分 100/優</li>
+  </ol>
+
+  <p style="margin-top:40px;font-size:12.5px;color:var(--sub)">
+    誠實揭露：WebSocket 群聊 / QR / GPS 反查 / PWA / 語音辨識 / 共識投票 / SQLite / 邊緣壓縮為真實運作；
+    照片內容解析與 LLM 判讀為可切換介面（填入 API Key 即用真模型，未設定時規則引擎降級）。
+    氣壓計樓層 / Wi-Fi BSSID / 聲波浮水印列為 Roadmap——它們在純 Web 環境會現場翻車，我們不做會翻車的功能。
+  </p>
+</div>
+</body>
+</html>

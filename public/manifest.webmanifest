@@ -1,0 +1,13 @@
+{
+  "name": "NearPulse — 現場即時資訊迴路",
+  "short_name": "NearPulse",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "事件觸發的臨時群組: 掃碼即入、AI 整理、用完即散",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

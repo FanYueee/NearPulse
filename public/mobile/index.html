@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#ffffff" />
+<title>NearPulse — 現場即時資訊迴路</title>
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="stylesheet" href="/mobile/style.css" />
+</head>
+<body>
+
+<!-- 隱藏拉出選單 (電腦版) -->
+<button id="drawer-handle" type="button">NearPulse 功能導覽</button>
+<div id="drawer-scrim" class="hidden"></div>
+<aside id="drawer">
+  <button id="drawer-close" type="button">×</button>
+  <h2>NearPulse 功能導覽</h2>
+  <div class="d-sub">事件觸發的臨時群組 — 掃碼即入、AI 整理、用完即散</div>
+
+  <div class="d-item">
+    <h3>1 · 雙模式通報</h3>
+    <p>GPS 訊號薄弱的地下街、站體，掃描預印 QR 碼秒進事件群組；有 GPS 時自動定位並反查地址，建立地理圍欄。</p>
+    <div class="gain">效益 — 定位不再是通報門檻，任何角落 3 秒完成第一手回報</div>
+  </div>
+  <div class="d-item">
+    <h3>2 · 語音通報 + AI Agent 判讀<span class="d-tag new">創新</span></h3>
+    <p>按住說話，瀏覽器即時轉文字，後端 AI Agent 自動判讀: 事件類別、嚴重度、傷患與威脅抽取、行動建議，並自動代填通報表單。</p>
+    <div class="gain">效益 — 壓力下不用打字，開口就能完成結構化通報</div>
+  </div>
+  <div class="d-item">
+    <h3>3 · 微任務指派 — 破解旁觀者效應<span class="d-tag new">獨家</span></h3>
+    <p>心理學的旁觀者效應: 現場人越多，越沒人願意回報。AI 指揮官不再對空氣喊話，而是<b>隨機指名一位在場成員</b>「@你: 請回報傷患狀況」；30 秒未回應才升級為全員提問。被指名者的任何訊息都會被視為回應並記錄。</p>
+    <div class="gain">效益 — 把「有人會處理吧」變成「就是我來處理」，被動群眾變主動感測器</div>
+  </div>
+  <div class="d-item">
+    <h3>3b · 1-Tap 群眾驗證<span class="d-tag excl">獨家</span></h3>
+    <p>不進群也能幫忙：對事件按一顆按鈕「我看到了 / 沒看到」，信心分數公式完全透明（確認 +12、未見 -15、隨時間衰減），惡作劇會被反向票壓制。</p>
+    <div class="gain">效益 — Waze 的置信度衰減移植到步行逃生</div>
+  </div>
+  <div class="d-item">
+    <h3>4 · 事實保鮮期<span class="d-tag new">獨家</span></h3>
+    <p>傳統通報的資訊是「快照」——2 分鐘前的「無人受傷」可能已經過期。每項事實都帶確認時間戳，面板即時顯示「x 秒前確認」；超過 2 分鐘未覆核，AI 主動要求在場人員再確認。</p>
+    <div class="gain">效益 — 資訊從「曾經正確」變成「持續正確」，指揮判斷不過期</div>
+  </div>
+  <div class="d-item">
+    <h3>5 · AI 指揮官 + 資訊完整度儀表</h3>
+    <p>主動追問缺失的位置／傷患／威脅，事實面板附完整度進度條，45 秒週期追蹤，全員看見同一份事實。</p>
+    <div class="gain">效益 — 混亂現場自動收斂出結構化事實，縮短黃金應變時間</div>
+  </div>
+  <div class="d-item">
+    <h3>6 · Catch-up 摘要卡<span class="d-tag core">核心</span></h3>
+    <p>晚加入者自動收到 10 秒摘要: 發生什麼、在哪、傷患、威脅、導流指引，不必爬數百則訊息。</p>
+    <div class="gain">效益 — 每個新進者都是即戰力，資訊不斷層</div>
+  </div>
+  <div class="d-item">
+    <h3>7 · 闢謠引擎<span class="d-tag core">核心</span></h3>
+    <p>多源交叉驗證，新回報與已知事實矛盾時自動標記「未經證實」，降低以訛傳訛。</p>
+    <div class="gain">效益 — 群眾情報可信度提升，避免恐慌擴散</div>
+  </div>
+  <div class="d-item">
+    <h3>8 · 多模態回報 + 多語播報</h3>
+    <p>照片解析為結構化事實、語音轉文字；一鍵以中文、English、日本語輪播事件簡報。</p>
+    <div class="gain">效益 — 不識字、外籍、視障者都能參與回報與接收</div>
+  </div>
+  <div class="d-item">
+    <h3>9 · 分區導流</h3>
+    <p>點選風險分區，系統向全員廣播避開指示，疏散不再靠喊的。</p>
+    <div class="gain">效益 — 人潮有序撤離，避免二次推擠</div>
+  </div>
+  <div class="d-item">
+    <h3>10 · 落幕報告 + 演習模式</h3>
+    <p>事件落幕自動生成結案報告；學校企業日常演習，機器人注入雜訊，AI 對五項目標評分(含指派回應)。</p>
+    <div class="gain">效益 — 每次事件都留下可檢討的紀錄，日常就能練成熟練度</div>
+  </div>
+
+  <div class="d-diff">
+    <b style="font-size:12.5px">與既有方案的差異</b>
+    <table style="margin-top:6px">
+      <tr><th></th><th>Citizen / LINE 群組 / 1999</th><th>NearPulse</th></tr>
+      <tr><td>加入</td><td>下載 App / 拉群 / 等專員</td><td>掃碼 3 秒，用完即散</td></tr>
+      <tr><td>資訊品質</td><td>雜訊、謠言、過期資訊</td><td>事實保鮮 + 矛盾標記</td></tr>
+      <tr><td>誰來回報</td><td>等「熱心的人」</td><td>AI 指名微任務</td></tr>
+      <tr><td>晚到者</td><td>自己爬訊息</td><td>10 秒摘要卡</td></tr>
+    </table>
+  </div>
+</aside>
+
+<!-- 進入頁 -->
+<div id="gate">
+  <div class="logo">Near<span>Pulse</span> <button class="lang-btn" id="lang-toggle" type="button">EN</button></div>
+  <div class="tagline" data-i18n="tagline">事件觸發的臨時群組 — 掃碼即入、AI 整理、用完即散</div>
+  <div class="gps-line"><span data-i18n="gpsLabel">定位</span>: <b id="gps-txt">請求中</b><span id="gps-addr"></span></div>
+
+  <!-- 通報 -->
+  <div class="block">
+    <h2 data-i18n="reportTitle">通報突發事件</h2>
+    <div class="desc" data-i18n="reportDesc">目擊現場狀況？可以用說的。AI 會即時轉文字並判讀情境，代填表單。</div>
+
+    <div class="kinds" id="kinds"></div>
+    <div class="subs" id="subs"></div>
+
+    <textarea id="r-text" rows="2" placeholder="一句話描述 (可空白，AI 會從分類與位置組織)"></textarea>
+    <div class="ai-hint" id="ai-hint"></div>
+
+    <div class="sem-title"><span data-i18n="whereAreYou">你在哪裡？</span><span data-i18n="whereHint">看周遭的大字告訴系統 — 不確定就跳過</span></div>
+    <div class="kinds" id="spaces"></div>
+    <div id="anchor-zone" class="hidden">
+      <div class="sem-hint" id="anchor-hint"></div>
+      <div class="subs" id="anchors"></div>
+      <div id="free-anchor-row" class="hidden">
+        <input type="text" id="free-anchor" maxlength="24" placeholder="輸入你看到的字 (店名/門號/出口號)" />
+      </div>
+    </div>
+    <div class="subs" id="levels"></div>
+
+    <div class="sev-row" id="sev-row"></div>
+    <div class="sev-desc" id="sev-desc"></div>
+
+    <div class="report-foot">
+      <button class="btn-voice" id="voice-report" type="button"><span class="dot"></span><span id="voice-label" data-i18n="voiceBtn">用說的通報</span></button>
+      <button class="btn-solid" id="btn-report" type="button" data-i18n="createBtn">建立事件群組</button>
+    </div>
+    <div class="mode-line">
+      <button id="m-gps" class="on" type="button">GPS 定位</button>
+      <button id="m-nogps" type="button">無 GPS / 掃碼模式</button>
+    </div>
+  </div>
+
+  <!-- 加入 -->
+  <div class="block">
+    <h2>加入現場群組</h2>
+    <div class="desc">輸入 QR 碼上的 4 位數事件代碼，或直接掃描。</div>
+    <div class="join-row">
+      <input type="tel" id="j-code" maxlength="4" placeholder="0000" inputmode="numeric" />
+      <button class="btn-solid" id="btn-join" type="button">加入</button>
+    </div>
+  </div>
+
+  <!-- 演習 -->
+  <div class="block">
+    <h2>演習模式</h2>
+    <div class="desc">學校/企業日常演練: 機器人注入模擬民眾訊息，完成流程後 AI 評分。</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px">
+      <select id="d-org" style="max-width:110px">
+        <option value="學校">學校</option>
+        <option value="企業">企業</option>
+        <option value="社區">社區</option>
+      </select>
+      <select id="d-scenario" style="max-width:150px">
+        <option value="fire">火警情境</option>
+        <option value="medical">人員受傷情境</option>
+      </select>
+    </div>
+    <button class="btn-soft" id="btn-drill" type="button">啟動演習</button>
+  </div>
+
+  <!-- 進行中 -->
+  <div class="block">
+    <h2>進行中事件 <span class="pct" id="ev-count">0</span></h2>
+    <div id="events-list"><div class="empty">目前無進行中事件</div></div>
+  </div>
+</div>
+
+<!-- 事件介面 -->
+<div id="app" class="hidden">
+  <div class="app-head">
+    <div class="row1">
+      <h1 id="a-title">事件</h1>
+      <div style="display:flex;gap:8px">
+        <button class="btn-soft" id="btn-speak" type="button">語音播報</button>
+        <button class="btn-soft danger" id="btn-resolve" type="button">落幕</button>
+      </div>
+    </div>
+    <div class="meta"><span id="a-meta"></span><span id="a-mode"></span></div>
+    <div class="tabs" id="tabs">
+      <button data-t="tl" class="on" type="button">現場頻道</button>
+      <button data-t="facts" type="button">AI 事實面板</button>
+      <button data-t="zone" type="button">分區導流</button>
+    </div>
+  </div>
+
+  <div class="app-body" id="view-tl">
+    <div id="verify-holder"></div>
+    <div id="summary-holder"></div>
+    <div id="assign-holder"></div>
+    <div class="tl" id="timeline"></div>
+  </div>
+
+  <div class="app-body hidden" id="view-facts">
+    <div class="facts-card">
+      <div class="facts-head">
+        <h3>AI 指揮官 — 事實面板</h3>
+        <span class="pct" id="facts-pct">0%</span>
+      </div>
+      <div class="fact-grid" id="facts-grid"></div>
+      <div class="meter"><i id="facts-meter" style="width:0%"></i></div>
+      <p style="font-size:11.5px;color:var(--sub);margin-top:6px">資訊完整度 — 綠色欄位已確認；「x 秒前」為該事實最後確認時間，逾 2 分鐘 AI 會主動要求覆核。</p>
+    </div>
+    <div class="section-title">闢謠引擎 — 矛盾偵測</div>
+    <div id="contra-list"><div class="empty">尚未偵測到矛盾資訊</div></div>
+  </div>
+
+  <div class="app-body hidden" id="view-zone">
+    <div class="section-title">分區導流</div>
+    <p style="font-size:12.5px;color:var(--sub)">點選風險分區，系統將廣播導流指示給全員。</p>
+    <div class="subs" id="zone-row" style="margin-top:12px"></div>
+    <div class="sev-desc" id="zone-note">尚未設定風險分區</div>
+  </div>
+
+  <div class="app-body hidden" id="view-drill">
+    <div class="section-title" style="justify-content:center">演習評分</div>
+    <div id="drill-score-holder"><div class="empty">演習進行中，結束後顯示評分</div></div>
+  </div>
+
+  <div class="app-body hidden" id="view-report">
+    <div id="report-holder"></div>
+  </div>
+
+  <div class="app-foot" id="foot-chat">
+    <div class="input-bar">
+      <button class="ib-btn" id="ib-plus" type="button">回報</button>
+      <input type="text" id="chat-input" placeholder="輸入現場狀況…" maxlength="500" />
+      <button class="ib-btn" id="ib-voice" type="button">按住說話</button>
+      <button class="ib-btn accent" id="ib-send" type="button">送出</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal" class="hidden">
+  <div id="modal-box"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/mobile/app.js"></script>
+</body>
+</html>
