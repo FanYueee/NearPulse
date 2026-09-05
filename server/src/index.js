@@ -21,6 +21,7 @@ import { createReportsRouter } from './routes/reports.js';
 import { createEventsRouter } from './routes/events.js';
 import { createSituationRouter } from './routes/situation.js';
 import { createVisionRouter, createPhotoRouter } from './routes/vision.js';
+import { visionMode, isVisionEnabled } from './pipeline/advisors/vision.js';
 import { createVenuesRouter } from './routes/venues.js';
 
 const app = express();
@@ -71,6 +72,14 @@ startBatchWorker(store);
 
 app.listen(config.port, () => {
   console.log(`[nearpulse] server 啟動於 :${config.port}`);
+  /**
+   * 啟動時就把視覺辨識的狀態印出來。
+   *
+   * 這是踩過三次的坑：重啟 server 時忘了帶環境變數，金鑰就靜默消失，
+   * 而降級路徑做得太好——使用者只會看到一行小字「視覺辨識未啟用」，
+   * 沒有人會發現是設定掉了。啟動日誌講清楚，就不會再誤判成程式壞掉。
+   */
+  console.log(`[nearpulse] 視覺辨識 ${isVisionEnabled() ? `啟用（${visionMode()}）` : '未啟用（缺金鑰或 provider=none）'}`);
   console.log(`[nearpulse] 批次間隔 ${config.batchIntervalMs / 1000}s、` +
     `凍結 ${config.freezeAfterMinutes}min、candidate TTL ${config.candidateTtlMinutes}min`);
 });

@@ -124,6 +124,14 @@ cd ../server && npm install && npm start
 # 視覺辨識是選配。要啟用的話：
 GMI_API_KEY=<your-key> VISION_PROVIDER=gmi VISION_MODEL=MiniMaxAI/MiniMax-M3 npm start
 
+# 或把設定放在 repo 外的檔案，重啟就不會忘了帶（Node 22+）
+#   /path/to/nearpulse.env:
+#     GMI_API_KEY=...
+#     VISION_PROVIDER=gmi
+#     VISION_MODEL=MiniMaxAI/MiniMax-M3
+node --env-file=/path/to/nearpulse.env src/index.js
+# 啟動日誌會印出「視覺辨識 啟用（interactive）」或「未啟用」，一眼就知道設定有沒有生效
+
 # 端到端驗證（123 項，同樣不需要金鑰）
 bash server/test/e2e.sh
 
