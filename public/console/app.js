@@ -44,14 +44,12 @@ async function refreshStats() {
   try { s = await api("/api/admin/stats"); } catch { return; }
   $("#st-active").textContent = s.active;
   $("#st-total").textContent = s.db.total_events;
-  $("#st-msgs").textContent = s.db.total_messages;
-  $("#st-confirms").textContent = s.db.total_confirms;
-  $("#db-mode").textContent = "儲存: " + s.mode + (s.llm ? " · LLM 啟用" : " · 規則引擎");
+  $("#db-mode").textContent = (s.llm ? "AI: MiniMax M3" : "AI: 規則引擎") + " · " + (s.mode === "sqlite" ? "已歸檔" : "JSON 模式");
   $("#stat-grid").innerHTML = `
-    <div class="stat"><div class="n">${s.db.total_events}</div><div class="l">歷史事件</div></div>
-    <div class="stat"><div class="n">${s.db.resolved_events}</div><div class="l">已落幕</div></div>
-    <div class="stat"><div class="n">${s.db.total_messages}</div><div class="l">總訊息</div></div>
-    <div class="stat"><div class="n">${s.db.total_confirms}/${s.db.total_denies}</div><div class="l">確認/未見</div></div>`;
+    <div class="stat"><div class="n">${s.db.total_events}</div><div class="l">協助過的狀況</div></div>
+    <div class="stat"><div class="n">${s.active}</div><div class="l">進行中</div></div>
+    <div class="stat"><div class="n">${s.db.total_messages}</div><div class="l">收到的回報</div></div>
+    <div class="stat"><div class="n">${s.db.total_confirms}</div><div class="l">現場確認</div></div>`;
 }
 
 // ---------------------------------------------------------------- 測試情境面板 (一鍵開演, 手機預覽同步)
@@ -154,9 +152,8 @@ async function refreshMeta() {
     const j = await api(`/api/events/${current.code}`);
     Object.assign(current, j);
     renderFactsRow();
-    renderConsensus();
     renderGuides();
-    $("#mon-meta").textContent = `${current.memberCount} 人 · 觀察台 ${current.observerCount} · ${current.semantic || (current.mode === "gps" ? "GPS" : "語意定位")}`;
+    $("#mon-meta").textContent = `${current.memberCount} 人在場 · ${current.semantic || (current.mode === "gps" ? "GPS 定位" : "文字地標")}`;
   } catch {}
 }
 
@@ -164,14 +161,13 @@ function renderMon() {
   $("#mon-title").textContent = current.title;
   refreshMeta();
   renderFactsRow();
-  renderConsensus();
   renderGuides();
   renderZoneSel();
   const tl = $("#mon-tl");
   tl.innerHTML = "";
   for (const m of current.timeline.slice(-100)) appendMsg(m, true);
   tl.scrollTop = tl.scrollHeight;
-  $("#a-resolve").textContent = current.isDrill ? "結束演習" : "手動落幕 (AI 也會自動)";
+  $("#a-resolve").textContent = current.isDrill ? "結束演習並評分" : "立即落幕";
 }
 
 function renderGuides() {
@@ -207,16 +203,6 @@ function renderFactsRow() {
   }).join("");
 }
 
-function renderConsensus() {
-  const c = current.consensus;
-  if (!c) { $("#consensus-bar").innerHTML = ""; return; }
-  const tone = c.score >= 75 ? "ok" : c.score >= 45 ? "warn" : "bad";
-  $("#consensus-bar").innerHTML = `
-    <div class="num">${c.score}</div>
-    <div class="meter"><i class="${tone}" style="width:${c.score}%"></i></div>
-    <div style="font-size:11.5px;color:var(--sub)">${c.label.v}<br/>${c.confirm} 確認 · ${c.deny} 未見</div>`;
-}
-
 function renderZoneSel() {
   const row = $("#zone-select");
   row.innerHTML = "";
@@ -233,12 +219,8 @@ function renderZoneSel() {
   }
 }
 
-// ---------------------------------------------------------------- 手動控制 (次要 — AI 自動為主)
+// ---------------------------------------------------------------- 進階操作 (AI 自動為主, 人工為輔)
 $("#a-zone").onclick = () => { zoneOpen = !zoneOpen; $("#zone-select").classList.toggle("hidden", !zoneOpen); };
-$("#a-report").onclick = async () => {
-  if (!current) return;
-  try { showReport((await api(`/api/events/${current.code}/report`)).report); } catch (e) { toastOnConsole(e.message); }
-};
 $("#a-resolve").onclick = async () => {
   if (!current) return;
   try {

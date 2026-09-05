@@ -159,9 +159,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   <div class="brand">Near<span>Pulse</span> <small>後台 · 現場情報指揮中心</small></div>
   <div class="top-stats">
     <span>進行中 <b id="st-active">0</b></span>
-    <span>總事件 <b id="st-total">0</b></span>
-    <span>訊息 <b id="st-msgs">0</b></span>
-    <span>確認票 <b id="st-confirms">0</b></span>
+    <span>協助人次 <b id="st-total">0</b></span>
   </div>
   <div class="top-links">
     <button class="demo-btn primary" id="test-btn" type="button">測試</button>
@@ -198,20 +196,20 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   <!-- 左: 事件列表 -->
   <div class="col">
     <div class="card">
-      <h3>進行中事件 <span class="live" id="ev-live">LIVE</span></h3>
+      <h3>進行中狀況 <span class="live" id="ev-live">LIVE</span></h3>
       <div id="ev-list"><div class="ev-empty">載入中…</div></div>
     </div>
     <div class="card">
-      <h3>系統統計 <span class="mode-pill" id="db-mode"></span></h3>
+      <h3>服務統計 <span class="mode-pill" id="db-mode"></span></h3>
       <div class="stat-grid" id="stat-grid"></div>
     </div>
     <div class="card">
-      <h3>OSM 即時地圖 <span class="mode-pill">OpenStreetMap · GPS 事件</span></h3>
-      <div id="map-holder"><div id="map" style="height:220px;border-radius:11px;overflow:hidden;border:1px solid var(--line)"></div><div class="preview-note" id="map-note">GPS 事件建立後自動標記 (語意座標事件顯示於列表)</div></div>
+      <h3>事故地點分佈 <span class="mode-pill">OpenStreetMap</span></h3>
+      <div id="map-holder"><div id="map" style="height:220px;border-radius:11px;overflow:hidden;border:1px solid var(--line)"></div><div class="preview-note" id="map-note">紅點 = 有 GPS 的戶外/近地面事故；地下與室內事故改以文字地標回報（左列表）</div></div>
     </div>
     <div class="card">
-      <h3>進入用 QR <span class="mode-pill" id="qr-code-label"></span></h3>
-      <div id="qr-holder" style="text-align:center"><div class="ev-empty">選擇左側事件後顯示</div></div>
+      <h3>現場加入 QR <span class="mode-pill" id="qr-code-label"></span></h3>
+      <div id="qr-holder" style="text-align:center"><div class="ev-empty">選擇事件後顯示 — 手機掃描直接進入協助頁</div></div>
     </div>
   </div>
 
@@ -219,21 +217,24 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   <div class="col mon-col">
     <div class="card">
       <div class="mon-head">
-        <div class="mon-title" id="mon-title">選擇一個事件開始監控</div>
+        <div class="mon-title" id="mon-title">按「測試」注入情境，或等待手機端通報</div>
         <span style="font-size:11.5px;color:var(--sub)" id="mon-meta"></span>
       </div>
       <div id="mon-body" class="hidden">
         <div class="guide-strip" id="guide-holder" style="margin:12px 0"><div class="ev-empty">建立事件後 AI 自動引導</div></div>
         <div class="facts-row" id="facts-row"></div>
-        <div class="consensus-bar" id="consensus-bar"></div>
         <div class="tl" id="mon-tl"></div>
 
-        <div class="actions">
-          <button class="abtn" id="a-zone">分區導流</button>
-          <button class="abtn" id="a-report">生成報告</button>
-          <button class="abtn danger" id="a-resolve">落幕解散</button>
-        </div>
-        <div class="zone-row hidden" id="zone-select"></div>
+        <!-- 進階操作 (AI 自動為主, 人工為輔) -->
+        <details class="adv">
+          <summary>進階操作（AI 平時全自動，這裡只在你判斷需要時用）</summary>
+          <div class="actions">
+            <button class="abtn" id="a-zone">廣播避開區域</button>
+            <button class="abtn danger" id="a-resolve">立即落幕</button>
+          </div>
+          <div class="zone-row hidden" id="zone-select"></div>
+          <p class="adv-note">AI 會自動引導、自動追問、5 分鐘無活動自動落幕並歸檔報告（供單位檢討用，無需人工操作）。</p>
+        </details>
         <div id="report-out" class="hidden" style="margin-top:12px"></div>
       </div>
     </div>
@@ -258,3 +259,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 <script src="/console/app.js"></script>
 </body>
 </html>
+<style>
+.adv { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 10px; }
+.adv summary { font-size: 12.5px; color: var(--sub); font-weight: 600; cursor: pointer; }
+.adv-note { font-size: 11.5px; color: var(--sub); margin-top: 8px; }
+</style>

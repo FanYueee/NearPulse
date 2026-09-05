@@ -1,5 +1,5 @@
 // NearPulse service worker — PWA 離線殼 (network-first for app shell)
-const CACHE = "nearpulse-v3";
+const CACHE = "nearpulse-v4";
 const SHELL = ["/mobile/", "/mobile/app.js", "/mobile/style.css", "/manifest.webmanifest", "/icon-192.png"];
 
 self.addEventListener("install", (e) => {
