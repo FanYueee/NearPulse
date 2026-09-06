@@ -113,7 +113,7 @@ function planToSpeech(ev, plan) {
 
 /** 車廂內的到站倒數：站名要大，那是他抬頭核對顯示器的東西 */
 function ArrivalCountdown({ arrival }) {
-  const eta = useEta(arrival.arriveAt);
+  const eta = useEta(arrival.arriveAt, arrival.typeLabel);
   if (!eta) return null;
   return (
     <div className="arrival">
@@ -227,7 +227,7 @@ function EvacPlan({ plan, arrival, offMap }) {
 
 /** 事故列車即將進站——月台上的人是唯一能改變車廂內結果的那群人 */
 function InboundAlert({ alert }) {
-  const eta = useEta(alert.arriveAt);
+  const eta = useEta(alert.arriveAt, alert.typeLabel);
   if (!eta) return null;
   return (
     <div className="inbound-alert">
@@ -250,20 +250,20 @@ function InboundAlert({ alert }) {
  * 計時器只在**還沒到站時**存在——到站後就沒有東西需要更新了，
  * 讓它繼續跑只是白白耗電。這頁的使用者多半在地下、電量寶貴。
  */
-function useEta(arriveAt) {
-  const [eta, setEta] = useState(() => (arriveAt ? etaOf(arriveAt) : null));
+function useEta(arriveAt, typeLabel) {
+  const [eta, setEta] = useState(() => (arriveAt ? etaOf(arriveAt, undefined, typeLabel) : null));
 
   useEffect(() => {
     if (!arriveAt) { setEta(null); return undefined; }
 
-    const first = etaOf(arriveAt);
+    const first = etaOf(arriveAt, undefined, typeLabel);
     setEta(first);
     // 已經到站就不要開計時器：畫面停在「應已進站」，不需要每秒更新。
     // 這頁的使用者多半在地下、電量寶貴，能不跑的迴圈就不跑。
     if (first.arrived) return undefined;
 
     const id = setInterval(() => {
-      const next = etaOf(arriveAt);
+      const next = etaOf(arriveAt, undefined, typeLabel);
       setEta(next);
       if (next.arrived) clearInterval(id);
     }, 1000);

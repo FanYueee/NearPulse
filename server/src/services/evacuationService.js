@@ -36,7 +36,10 @@ import { isAheadOfThreat, motionLine } from './threatMotion.js';
  * 直線距離拿來做「排序」與「粗略分組」是穩健的（差一個數量級的東西排得出來），
  * 拿來當「你要走幾公尺」則不成立——這正是它們不出現在輸出文字裡的原因。
  */
-const AVOID_RADIUS_M = 60;   // 這麼近的出口視為可能與事件在同一區
+const AVOID_RADIUS_M = 60;
+
+/** 會擴散或移動的事件類型——只有這些才產生「不要走」清單 */
+const SPREADING_TYPES = new Set(['fire', 'attack', 'crush']);   // 這麼近的出口視為可能與事件在同一區
 const PREFER_MIN_DIST_M = 80; // 建議的出口至少要離這麼遠才算「另一個區域」
 
 /**
@@ -46,7 +49,7 @@ const PREFER_MIN_DIST_M = 80; // 建議的出口至少要離這麼遠才算「�
  * @param {{lat, lon}|null} point - 使用者在地圖上點的事件位置（比出口更精確時）
  * @returns {{away: Array, avoid: Array}|null} 資料不足時回 null
  */
-export function suggestExits(venueId, nearExitCode, point = null, motion = null, mobility = null) {
+export function suggestExits(venueId, nearExitCode, point = null, motion = null, incidentType = null) {
   const venue = findVenue(venueId);
   if (!venue?.exits?.length) return null;
 
@@ -81,7 +84,15 @@ export function suggestExits(venueId, nearExitCode, point = null, motion = null,
    * 「往這裡走」仍然給：那只是「這個場域有哪些出口」，本來就有用。
    * 但「不要走」是一個**指認**，沒有依據就不該說。
    */
-  const nearby = anchored ? scored.filter((s) => s.dist <= AVOID_RADIUS_M) : [];
+  /**
+   * 只有**會擴散或移動**的事件才需要「不要走」。
+   *
+   * 有人倒下不會讓附近的出口變危險，把它們標成不要走只會讓人多繞路，
+   * 甚至延誤救護人員的動線。火警的煙會擴散、攻擊者會移動、
+   * 壅塞點會轉移——那三類才成立。
+   */
+  const spreads = SPREADING_TYPES.has(incidentType);
+  const nearby = anchored && spreads ? scored.filter((s) => s.dist <= AVOID_RADIUS_M) : [];
   return {
     /** 事件位置是否有錨點——UI 據此調整語氣（見上面的說明） */
     anchored: Boolean(anchored),
@@ -202,7 +213,7 @@ export function evacuationPlan({
     };
   }
 
-  const base = suggestExits(venueId, nearExitCode, point, motion);
+  const base = suggestExits(venueId, nearExitCode, point, motion, incidentType);
   if (!base) return null;
   const venue = findVenue(venueId);
   /**
