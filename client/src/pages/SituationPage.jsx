@@ -339,7 +339,6 @@ export default function SituationPage() {
     coarseFix().then((f) => {
       if (!alive || !f) return;
       setFix(f);
-      setRange((r) => (r === 0 ? 5000 : r));
     });
     return () => { alive = false; };
   }, []);
@@ -375,13 +374,20 @@ export default function SituationPage() {
    * 因為我們無從判斷它遠不遠，而把它藏起來等於讓它消失。
    */
   const q = query.trim().toLowerCase();
-  const groups = card.stations.filter((g) => {
+  let groups = card.stations.filter((g) => {
     if (q && !g.stationName.toLowerCase().includes(q)) return false;
     if (!range || !fix) return true;
     if (!Number.isFinite(g.lat)) return true;
     return roughDistM(fix, g) <= range;
   });
-  const hiddenCount = card.stations.length - groups.length;
+  let hiddenCount = card.stations.length - groups.length;
+  /**
+   * 篩選之後一則都不剩，但卡片上其實有事件——那時候顯示空白畫面是錯的。
+   * 使用者只會看到「目前沒有事件」，而事實是「有，只是不在你選的範圍內」。
+   * 直接顯示全部並在上方說明，讓他自己決定要不要縮回來。
+   */
+  const filteredAway = groups.length === 0 && card.stations.length > 0;
+  if (filteredAway) { groups = card.stations; hiddenCount = 0; }
   // 徵詢中的清單套用同一組篩選——只篩事件卻不篩徵詢，會出現
   // 「上面說範圍內沒事、下面卻列著五則徵詢」的矛盾畫面
   const visibleIds = new Set(groups.flatMap((g) => g.events.map((e) => e.id)));
@@ -487,7 +493,7 @@ export default function SituationPage() {
             搜尋框對多數人是雜訊（他們要的是「附近有沒有大事」，不是找某站），
             但趕著確認家人所在站的人需要它——所以收合成一顆按鈕，
             要的人才展開，不要的人永遠不會看到輸入框。 */}
-        {card.stations.length > 1 && (
+        {card.stations.length > 0 && (
           <div className="sit-row sit-filter">
             <div className="filter-ranges">
               {RANGES.map((r) => (
@@ -524,7 +530,16 @@ export default function SituationPage() {
             {!fix && (
               <p className="muted-2">收不到定位，無法依距離篩選。</p>
             )}
-            {hiddenCount > 0 && (
+            {filteredAway && (
+            <p className="muted-2">範圍內沒有事件，以下顯示全部。</p>
+          )}
+          {/* 明確的出口：篩選把東西藏起來時，一定要有一鍵看全部的辦法 */}
+          {range !== 0 && (
+            <button className="chip show-all" onClick={() => setRange(0)}>
+              顯示所有事件（{card.stations.length}）
+            </button>
+          )}
+          {hiddenCount > 0 && (
               <p className="muted-2">{hiddenCount} 件在範圍外。</p>
             )}
           </div>
