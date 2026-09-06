@@ -1798,3 +1798,7 @@ button { cursor: pointer; }
 
 /* 分頁進場動畫：與回報頁同款的方向感 */
 .event-card { animation: step-in 0.22s ease; }
+
+/* 警戒徽章帶訊號數：等級說明嚴重度，人數說明憑據 */
+.threat { display: inline-flex; gap: 6px; align-items: baseline; }
+.threat-count { font-size: .68rem; font-weight: 600; opacity: .8; }

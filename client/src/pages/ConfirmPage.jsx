@@ -298,7 +298,7 @@ export default function ConfirmPage({ eventId }) {
               <p className="muted" style={{ marginTop: 14 }}>{wording.repeat}</p>
               <div className="confirm-actions" style={{ flexDirection: 'column', marginTop: 10 }}>
                 <button className="ghost-btn btn-block" onClick={() => setStep('done')}>
-                  說不出是哪個出口 / 完成
+                  {sightingMsg ? '完成' : '說不出是哪個出口'}
                 </button>
               </div>
             </>

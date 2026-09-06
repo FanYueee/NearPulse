@@ -688,6 +688,8 @@ function EventCard({ venue, ev, plan, stepFree }) {
         <span className="event-type">{ev.typeLabel}</span>
         <span className={`threat threat-${ev.threatLevel}`}>
           {THREAT_LABEL[ev.threatLevel] ?? '未經確認'}
+          {/* 等級說明嚴重度，人數說明憑據——未經確認的更需要這個數字 */}
+          <span className="threat-count">{ev.independentSignals} 人</span>
         </span>
       </div>
 
@@ -707,7 +709,13 @@ function EventCard({ venue, ev, plan, stepFree }) {
       {ev.assistanceReports > 0 && (
         <div className="flag flag-assist">有人需協助 · {ev.assistanceReports} 筆</div>
       )}
-      {ev.onTrain && <div className="flag flag-train">事件在列車上</div>}
+      {ev.onTrain && (
+        <div className="flag flag-train">
+          {ev.arrival
+            ? `事件在列車上，往 ${ev.arrival.name}`
+            : '事件在列車上（通報者未指認下一站）'}
+        </div>
+      )}
 
       {/* ---- 疏散：這張卡的主體，放最顯眼 ---- */}
       <EvacPlan plan={plan} arrival={ev.arrival} offMap={venue.offMap} />
