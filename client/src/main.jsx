@@ -11,17 +11,9 @@
 
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
-import ErrorBoundary from './components/ErrorBoundary.jsx';
 import './styles.css';
 
-/**
- * 包一層錯誤邊界：React 元件丟例外時整棵樹會被卸載，畫面完全空白。
- * 對緊急應用來說白畫面是最糟的失敗方式——它連「這裡壞了，去用別的方法」
- * 都沒說。至少要留下一條回到通報頁的出路。
- */
-createRoot(document.getElementById('root')).render(
-  <ErrorBoundary><App /></ErrorBoundary>
-);
+createRoot(document.getElementById('root')).render(<App />);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

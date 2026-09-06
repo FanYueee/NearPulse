@@ -134,6 +134,10 @@ client/src/
   modules/offline.js            連線狀態追蹤
 public/sw.js                    Service Worker：離線殼 + 回報排隊
 
+android/                        Android app（補上網頁做不到的感測器層）
+  app/src/main/.../sensor/AltitudeEstimator.kt    氣壓計樓層偵測
+  app/src/main/.../sensor/CrowdMotionDetector.kt  人流停滯偵測
+  app/src/test/                 21 項單元測試（純邏輯，JVM 可跑）
   pages/ReportPage.jsx      回報 3 秒流程
   pages/ConfirmPage.jsx     兩段式確認
   pages/SituationPage.jsx   態勢卡（讀取端）
@@ -176,7 +180,7 @@ scripts/build-venues.mjs   分區查詢 Overpass（一次抓全台會斷線）
    ├─ 停車場：OSM 只有一個帶名字的點 → 僅建到場域層級
    └─ 出口點雲以 PCA 主軸對齊後正規化到 0~1（純服務繪圖，不帶語意）
         ↓
-server/src/data/venues.json   836 場域 / 1356 出口 / 498KB，進版控
+server/src/data/venues.json   519 場域 / 614 出口 / 165KB，進版控
 ```
 
 **為什麼是離線 script 而非啟動時抓**：Overpass 是共用免費服務，不適合逐請求查詢；

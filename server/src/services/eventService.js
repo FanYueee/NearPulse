@@ -64,8 +64,6 @@ export function createCandidateEvent(report, stationName) {
      * 對車廂裡的人講「往 3 號出口」毫無意義。
      */
     onTrain: report.onTrain === true,
-    /** 有通報者目擊到移動——與 threatMotion 的推算判定分開保存 */
-    reportedMoving: report.reportedMoving === true,
     /**
      * 列車下一站，以及**離站時刻**。離站時刻取首筆回報的接收時間——
      * 通報者是在車上按下送出的，那一刻列車已經在兩站之間。這是我們能拿到
@@ -151,7 +149,6 @@ export function toEventSummary(event) {
     incidentPoint: event.incidentPoint ?? null, // 事件座標（地圖顯示用）
     assistanceReports: event.assistanceReports ?? 0, // 回報「有人需要協助」的筆數
     onTrain: event.onTrain === true,
-    reportedMoving: event.reportedMoving === true,
     nextVenueId: event.nextVenueId ?? null,
     departedAt: event.departedAt ?? null,
     reportCount: event.reports.length,

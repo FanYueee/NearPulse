@@ -115,17 +115,6 @@ export function validateReport(body) {
   // 在列車上：疏散建議完全不同（車廂內沒有「出口」可去）
   body.onTrain = body.onTrain === true;
 
-  /**
-   * 通報者自己看到「對方／火勢正在移動」。
-   *
-   * 系統的移動判定（threatMotion）刻意要求**兩個獨立目擊者**才成立，
-   * 那是為了防誤判——一個人邊走邊回報會被誤判成威脅在移動。
-   * 但一個人**看著**加害者跑走，本來就是直接證據，不該因為湊不到第二個人
-   * 就被丟掉。所以這個欄位獨立保存，UI 也用不同語氣呈現：
-   * 「通報者表示對方正在移動」vs「系統判定移動中」。
-   */
-  body.reportedMoving = body.reportedMoving === true;
-
   // 使用者指認的下一站（車廂顯示器上的站名）。不在列車上就沒有意義，
   // 一律清掉——避免舊狀態殘留造成錯誤的到站預告。
   if (!body.onTrain || typeof body.nextVenueId !== 'string') body.nextVenueId = null;
@@ -160,12 +149,15 @@ export function normalizeReport(body) {
     incidentPoint: body.incidentPoint ?? null, // 地圖選點（最精確的事件位置）
     needsAssistance: body.needsAssistance === true, // 有人無法自行疏散
     onTrain: body.onTrain === true,                 // 事件在列車上
-    reportedMoving: body.reportedMoving === true,   // 通報者目擊到移動
     nextVenueId: body.nextVenueId ?? null,          // 列車的下一站（到站預告用）
     note: body.note ?? null,                 // 文字補充（選配）
     attachToEventId: body.attachToEventId ?? null,
     audio: body.audio ?? null,
     photo: body.photo ?? null,
+    // 感測器旁證（選配、漸進增強）：加速度計下樓模式、磁場異常、
+    // 原生橋接的樓層估計。前端沒有感測器時整個物件是 null——
+    // 現階段僅存查與批次端預留，不參與任何門檻判斷。
+    sensorEvidence: body.sensorEvidence ?? null,
     receivedAt: Date.now(),
   };
 }
