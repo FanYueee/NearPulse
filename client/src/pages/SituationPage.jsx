@@ -29,9 +29,10 @@ import { startSituationPolling } from '../modules/api.js';
 import { isSpeechSupported, speak } from '../modules/speech.js';
 import OfflineBar from '../components/OfflineBar.jsx';
 import { etaOf } from '../modules/train.js';
-import { coarseFix, lastKnownFix, resolveLocation } from '../modules/location.js';
+import { coarseFix, lastKnownFix, resolveLocation, rememberStation } from '../modules/location.js';
 import { wordingFor } from '../modules/incidentWording.js';
 import Pictogram from '../components/Pictogram.jsx';
+import VenuePicker from '../components/VenuePicker.jsx';
 
 /**
  * 地圖**動態載入**：leaflet 與圖磚加起來遠超過整張態勢卡的預算。
@@ -314,6 +315,8 @@ export default function SituationPage() {
   // 地圖預設**收合**——進頁面先看文字（任何網路都到得了），
   // 空間分佈是想看才開的補充視角，不該與事件卡的地圖搶注意力。
   const [mapOpen, setMapOpen] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+
   /** 你在哪——決定了「附近」是什麼意思 */
   const [here, setHere] = useState(null);
   /** 警示/雜項區塊的收合——平時只佔一行摘要 */
@@ -469,7 +472,9 @@ export default function SituationPage() {
               <span className="here-sub">僅顯示全部事件</span>
             </span>
           )}
-          <a className="here-action" href="#/">變更</a>
+          {/* 就地開場域選擇器。原本連到 #/ 會把人踢回回報頁——
+              他只是想換個參照點看附近有什麼事，不是要通報。 */}
+          <button className="here-action" onClick={() => setShowPicker(true)}>變更</button>
         </div>
 
         {/* 無台階開關：它決定每張事件卡的疏散內容（電梯火災不可用 →
@@ -683,6 +688,25 @@ export default function SituationPage() {
       <footer className="page-footer">
         <a href="#/">回報事件</a>
       </footer>
+      {showPicker && (
+        <VenuePicker
+          fix={fix}
+          requestFix={async () => { const f = await coarseFix(); if (f) setFix(f); return f; }}
+          onPicked={(id, name) => {
+            setHere({ id, name });
+            rememberStation(id, name);
+            setShowPicker(false);
+            // 換了參照點就把範圍收回「附近」，否則選了站卻還在看全台
+            if (range === 0) setRange(5000);
+          }}
+          onPickedPlace={(pl) => {
+            setHere({ id: null, name: pl.name });
+            setFix({ lat: pl.lat, lon: pl.lon, accuracy: 100 });
+            setShowPicker(false);
+          }}
+          onCancel={() => setShowPicker(false)}
+        />
+      )}
     </div>
   );
 }
