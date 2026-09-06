@@ -283,6 +283,14 @@ export function startSituationPolling(onCard, { intervalMs = 12_000 } = {}) {
   function start() {
     if (timer) return;
     poll();
+    /**
+     * 進來 2.5 秒後再補抓一次。
+     *
+     * 剛送完回報就點進來的人，批次可能還沒跑完（伺服器端約 1 秒）。
+     * 少了這一次，他要等滿一個 12 秒的輪詢週期才看得到自己的通報——
+     * 而那幾秒足以讓人以為送出失敗。ETag 命中時是 304，成本趨近於零。
+     */
+    setTimeout(poll, 2500);
     timer = setInterval(poll, intervalMs);
   }
   function stop() {

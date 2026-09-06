@@ -34,8 +34,25 @@ import { analyzePhoto, visionMode } from './advisors/vision.js';
 import { resolveAnchors } from '../services/venueService.js';
 import { llmNarrate } from './advisors/llm.js';
 
+/**
+ * 讓回報路由可以「催」一次批次。
+ *
+ * 批次固定 10 秒跑一次，加上讀取端 12 秒輪詢，最糟情況下使用者送出回報後
+ * 要等 22 秒才看得到自己的通報——在恐慌情境下那太久了，而且會讓人以為沒送出。
+ *
+ * 800ms 的延遲是刻意的：同一時間湧入的多筆回報仍然會被聚在同一次批次裡
+ * （聚合本來就是這個設計的重點），只是不必等滿 10 秒。
+ */
+let nudgeTimer = null;
+export function nudgeBatch() {
+  if (nudgeTimer || !tickRef) return;
+  nudgeTimer = setTimeout(() => { nudgeTimer = null; tickRef(); }, 800);
+}
+let tickRef = null;
+
 export function startBatchWorker(store, { log = console.log } = {}) {
   const timer = setInterval(tick, config.batchIntervalMs);
+  tickRef = tick;
   tick(); // 啟動時立刻跑一次，讓空卡也能被 ETag 查詢
   return () => clearInterval(timer);
 

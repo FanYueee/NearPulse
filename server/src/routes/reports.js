@@ -11,6 +11,7 @@
 import { Router } from 'express';
 import { validateReport, normalizeReport } from '../services/reportService.js';
 import { toEventSummary } from '../services/eventService.js';
+import { nudgeBatch } from '../pipeline/batchWorker.js';
 
 export function createReportsRouter(store) {
   const router = Router();
@@ -45,6 +46,8 @@ export function createReportsRouter(store) {
     store.rememberReportResult(req.body.uuid, result);
 
     store.markCardDirty();
+    // 立刻催一次批次，不必等滿 10 秒——送出後看不到自己的通報會讓人以為失敗
+    nudgeBatch();
     return res.status(202).json(result);
   });
 
